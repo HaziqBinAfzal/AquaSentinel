@@ -56,3 +56,14 @@ jobs:
           name: AquaSentinel-v1.0.0rc1-Windows
           path: dist/AquaSentinel-v1.0.0rc1-Windows.zip
           if-no-files-found: error
+
+  windows-launcher:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify AquaSentinel.bat end-to-end
+        shell: cmd
+        run: AquaSentinel.bat --check-only
