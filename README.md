@@ -4,6 +4,28 @@ A safe, simulated and defensive **Smart Water & Desalination Infrastructure Secu
 
 > This classroom project uses synthetic telemetry and isolated software components. It does not connect to, operate, or modify a real water utility, desalination plant, SCADA system, PLC, dosing controller, or public-health system.
 
+## One-file start on Windows
+
+For the easiest exam/user experience, use only this file:
+
+```bat
+AquaSentinel.bat
+```
+
+Double-clicking `AquaSentinel.bat` performs the complete startup workflow automatically:
+
+1. Detects Python 3.
+2. Creates the isolated `.venv` environment when required.
+3. Updates package tooling.
+4. Installs AquaSentinel plus its verification tools.
+5. Runs the AquaSentinel environment/safety doctor.
+6. Runs the automated test suite.
+7. Runs Ruff code-quality and Bandit defensive security checks.
+8. Runs architecture, normal-operation, dosing-event, incident and report smoke checks.
+9. Starts the complete guided Topic 133 oral-exam demonstration.
+
+If a check fails, the launcher stops before the demo and shows the failed stage. If every check passes, the project starts automatically. This launcher is the recommended Windows entry point; users do not need to manually activate the virtual environment or remember individual commands.
+
 ## What AquaSentinel demonstrates
 
 AquaSentinel combines the Topic 133 requirements in one terminal-first project:
@@ -46,7 +68,7 @@ Raw/Sea Water -> Pretreatment -> High-Pressure Pump -> Reverse Osmosis
              -> Post-Treatment/Disinfection -> Storage -> Distribution
 ```
 
-## Installation
+## Alternative installation
 
 ### Windows
 
@@ -73,7 +95,13 @@ aquasentinel doctor
 
 ## Best exam commands
 
-Start with the environment check:
+The one-command guided oral-exam sequence is:
+
+```bash
+aquasentinel exam-demo
+```
+
+Start with the environment check when running manually:
 
 ```bash
 aquasentinel doctor
@@ -95,10 +123,10 @@ aquasentinel live --scenario fouling --samples 30
 aquasentinel live --scenario optimization --samples 30
 ```
 
-The live dashboard refresh rate is configurable:
+For the app-like terminal display:
 
 ```bash
-aquasentinel live --scenario fouling --samples 40 --refresh-rate 4
+aquasentinel live --scenario dosing_event --samples 40 --refresh-rate 4 --fullscreen
 ```
 
 For discrete snapshots instead of a live display:
@@ -111,6 +139,7 @@ Other commands:
 
 ```bash
 aquasentinel architecture
+aquasentinel incident --scenario dosing_event
 aquasentinel ml-check
 aquasentinel compliance
 aquasentinel report
@@ -135,19 +164,13 @@ aquasentinel run --scenario fouling --samples 12 --seed 133
 
 ## Safe examiner demo sequence
 
-A strong short demonstration is:
+The recommended Windows path is simply:
 
 ```text
-1. aquasentinel doctor
-2. aquasentinel architecture
-3. aquasentinel live --scenario normal --samples 10
-4. aquasentinel live --scenario quality_anomaly --samples 12
-5. aquasentinel live --scenario dosing_event --samples 12
-6. aquasentinel live --scenario fouling --samples 15
-7. aquasentinel live --scenario optimization --samples 12
-8. aquasentinel compliance
-9. aquasentinel report
+Double-click AquaSentinel.bat
 ```
+
+The guided demo then covers normal operation, water-quality anomalies, AI anomaly detection, OT/SCADA correlation, incident response, predictive maintenance, resource optimization, DevSecOps and compliance evidence.
 
 Explain that one abnormal sensor is evidence rather than automatic proof of contamination; quality events are cross-validated; cyber alerts are correlated with process consequences; ML prioritizes anomalies; optimization stays inside safety/quality guardrails; and humans retain authority.
 
@@ -158,8 +181,10 @@ Unexpected dosing event -> detect synthetic network/control anomaly -> correlate
 ## Project structure
 
 ```text
+AquaSentinel.bat     one-file Windows setup/check/start launcher
 aquasentinel/
   __main__.py       CLI and exam command routing
+  exam_demo.py      guided one-command oral-exam sequence
   telemetry.py      deterministic synthetic desalination telemetry
   analytics.py      quality, fouling and cyber analysis
   ml.py             IsolationForest anomaly model
@@ -177,24 +202,17 @@ tests/
   test_analytics.py
   test_ml_security.py
   test_optimizer_doctor.py
+  test_incidents.py
+  test_version.py
 .github/workflows/
   ci.yml            tests, lint, security scan and CLI smoke checks
-install.bat          Windows setup
-install.sh           Linux/macOS setup
+install.bat          Windows setup alternative
+install.sh           Linux/macOS setup alternative
 ```
 
 ## DevSecOps
 
-Pull requests run automated checks for:
-
-- Ruff static checks.
-- Bandit defensive Python security scanning.
-- Pytest unit tests.
-- Environment doctor validation.
-- Architecture command smoke test.
-- Dosing-event scenario smoke test.
-- Live terminal dashboard smoke test.
-- Exam report generation.
+Pull requests run automated checks for Ruff static checks, Bandit defensive Python security scanning, Pytest unit tests, environment doctor validation, architecture and scenario smoke tests, live terminal smoke tests, guided exam-demo execution and exam-report generation.
 
 ## Exam mapping
 
