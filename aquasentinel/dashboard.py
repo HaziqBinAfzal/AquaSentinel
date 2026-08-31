@@ -23,7 +23,7 @@ def architecture() -> None:
     ))
 
 
-def render(t, result, scenario: str, ml_result: dict | None = None) -> None:
+def render(t, result, scenario: str, ml_result: dict | None = None, correlation: dict | None = None) -> None:
     table = Table(title=f"AquaSentinel AI | {scenario}", show_lines=True)
     table.add_column("Domain", no_wrap=True)
     table.add_column("Live evidence")
@@ -43,6 +43,12 @@ def render(t, result, scenario: str, ml_result: dict | None = None) -> None:
         t.cyber_event,
         f"Cyber priority {result['cyber_score']}%",
     )
+    if correlation:
+        table.add_row(
+            "Correlation",
+            ", ".join(correlation["sources"]),
+            f"{correlation['correlation_score']}% | {correlation['disposition']}",
+        )
     if ml_result:
         table.add_row(
             "ML anomaly",
@@ -54,9 +60,10 @@ def render(t, result, scenario: str, ml_result: dict | None = None) -> None:
         f"Tank {t.tank_level}% | Energy {t.energy_kwh} kWh | Pump {t.pump_state}",
         result["recommendation"],
     )
+    needs_review = result["human_review_required"] or bool(ml_result and ml_result["ml_state"] == "ANOMALOUS") or bool(correlation and correlation["correlation_score"] >= 70)
     table.add_row(
         "Decision",
-        "Rule + ML + cyber/process context",
-        "HUMAN REVIEW" if result["human_review_required"] or (ml_result and ml_result["ml_state"] == "ANOMALOUS") else "MONITOR",
+        "Rules + ML + cyber + process context",
+        "HUMAN REVIEW" if needs_review else "MONITOR",
     )
     console.print(table)
