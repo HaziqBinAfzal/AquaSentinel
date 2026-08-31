@@ -103,11 +103,12 @@ def main() -> None:
     run.add_argument("--seed", type=int, default=133)
     run.add_argument("--no-ml", action="store_true", help="Use only deterministic classroom checks")
 
-    live = sub.add_parser("live", help="Run the low-lag live terminal dashboard")
+    live = sub.add_parser("live", help="Run the industrial low-lag SOC terminal dashboard")
     live.add_argument("--scenario", choices=SCENARIOS, default="normal")
     live.add_argument("--samples", type=int, default=30)
     live.add_argument("--refresh-rate", type=float, default=4.0)
     live.add_argument("--seed", type=int, default=133)
+    live.add_argument("--fullscreen", action="store_true", help="Use terminal alternate-screen mode for an app-like exam demo")
 
     incident = sub.add_parser("incident", help="Show an examiner-friendly correlated incident brief")
     incident.add_argument("--scenario", choices=SCENARIOS, default="dosing_event")
@@ -127,7 +128,7 @@ def main() -> None:
     if args.cmd == "run":
         run_scenario(args.scenario, args.samples, args.delay, not args.no_ml, args.seed)
     elif args.cmd == "live":
-        run_live(args.scenario, args.samples, args.refresh_rate, args.seed)
+        run_live(args.scenario, args.samples, args.refresh_rate, args.seed, args.fullscreen)
     elif args.cmd == "incident":
         incident_brief(args.scenario, args.step, args.seed)
     elif args.cmd == "architecture":
