@@ -8,7 +8,7 @@ from rich.table import Table
 from .compliance import report
 from .dashboard import architecture
 from .doctor import healthy, run_checks
-from .file_analysis import analyze_file, render_file_analysis
+from .file_analysis import analyze_file
 from .ingestion import analyze_content
 from .webui import run_web
 
