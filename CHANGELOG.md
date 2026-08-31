@@ -6,7 +6,11 @@ AquaSentinel AI reaches its first final release as a safe, synthetic and defensi
 
 ### Final release highlights
 
-- Terminal-first smart water and desalination security simulation.
+- Localhost browser operations dashboard at `http://127.0.0.1:8765/` with live synthetic process, quality, AI, OT-security, risk, optimization and incident-response views.
+- Browser scenario selector covering `normal`, `sensor_anomaly`, `quality_anomaly`, `dosing_event`, `fouling` and `optimization`.
+- Automatic browser launch from `AquaSentinel.bat` after all verification gates pass.
+- Read-only JSON state endpoint used only by the local UI; server is bound to `127.0.0.1` and exposes no control/write API.
+- Terminal-first smart water and desalination security simulation remains available alongside the browser UI.
 - Segmented Enterprise / DMZ / OT / Safety & Quality architecture view.
 - Synthetic desalination telemetry and controlled exam scenarios.
 - Rule-based water-quality checks and cross-sensor validation.
@@ -19,12 +23,12 @@ AquaSentinel AI reaches its first final release as a safe, synthetic and defensi
 - Guided one-command `aquasentinel exam-demo` oral-exam sequence.
 - JSONL audit evidence and JSON exam-report export.
 - Environment doctor and explicit synthetic/read-only safety checks.
-- One-file Windows setup, verification and demo launcher.
+- One-file Windows setup, verification and localhost-dashboard launcher.
 - UTF-8-safe Windows Command Prompt support.
 - Dedicated Windows CI job running `AquaSentinel.bat --check-only` end-to-end.
-- Linux CI with Pytest, Ruff, Bandit, functional smoke tests and distribution integrity checks.
-- Final Windows ZIP containing application code, tests, documentation, assets and `START_HERE.txt`.
-- Examiner-facing README, terminal preview, project guide and release documentation.
+- Linux CI with Pytest, Ruff, Bandit, terminal/web functional smoke tests and distribution integrity checks.
+- Final Windows ZIP containing application code, browser UI, tests, documentation, assets and `START_HERE.txt`.
+- Examiner-facing README, terminal preview, project/viva guide and release documentation.
 
 ### Release history
 
@@ -32,4 +36,4 @@ AquaSentinel AI reaches its first final release as a safe, synthetic and defensi
 
 ### Safety boundary
 
-AquaSentinel is a classroom simulation only. It does not connect to, control, write to or modify real water utilities, desalination plants, PLCs, SCADA systems, dosing controllers or public-health infrastructure. Thresholds, models, optimization outputs and assurance mappings are illustrative and are not operational guidance, regulatory limits or certification.
+AquaSentinel is a classroom simulation only. It does not connect to, control, write to or modify real water utilities, desalination plants, PLCs, SCADA systems, dosing controllers or public-health infrastructure. The localhost UI is a visualization layer only. Thresholds, models, optimization outputs and assurance mappings are illustrative and are not operational guidance, regulatory limits or certification.
