@@ -2,9 +2,17 @@
 
 ### Smart Water & Desalination Infrastructure Security Platform
 
+[![CI](https://github.com/HaziqBinAfzal/AquaSentinel/actions/workflows/ci.yml/badge.svg?branch=build%2Ftopic-133-exam-platform)](https://github.com/HaziqBinAfzal/AquaSentinel/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![Release Candidate](https://img.shields.io/badge/release-v1.0.0--rc1-0A7EA4)
+![Project](https://img.shields.io/badge/project-EduQual%20Level%206-4C6EF5)
+![Mode](https://img.shields.io/badge/mode-synthetic%20%7C%20defensive%20%7C%20read--only-2E8B57)
+
 **EduQual Level 6 Diploma in Artificial Intelligence Operations — Oral Examination Project, Topic 133**  
 **Student:** Haziq Shahzad  
 **Release Candidate:** v1.0.0-rc1
+
+> **Examiner quick start:** On Windows, download/clone the repository and double-click `AquaSentinel.bat`. It prepares the isolated environment, verifies the project, runs its automated quality/security checks and then starts the guided Topic 133 demonstration.
 
 ---
 
