@@ -27,6 +27,30 @@ jobs:
       - run: python -m aquasentinel exam-demo --pause 0
       - run: python -m aquasentinel report --output reports/ci_exam_report.json
       - run: python scripts/build_user_package.py
+      - name: Verify user package contents
+        run: |
+          python - <<'PY'
+          from zipfile import ZipFile
+
+          archive = 'dist/AquaSentinel-v1.0.0rc1-Windows.zip'
+          root = 'AquaSentinel-v1.0.0rc1-Windows/'
+          required = {
+              root + 'AquaSentinel.bat',
+              root + 'README.md',
+              root + 'START_HERE.txt',
+              root + 'pyproject.toml',
+              root + 'aquasentinel/__main__.py',
+              root + 'tests/test_version.py',
+              root + 'assets/aquasentinel-terminal.svg',
+              root + 'docs/PROJECT_GUIDE.md',
+          }
+          with ZipFile(archive) as zf:
+              names = set(zf.namelist())
+          missing = sorted(required - names)
+          if missing:
+              raise SystemExit(f'Missing required distribution files: {missing}')
+          print(f'Package integrity verified: {len(names)} files')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: AquaSentinel-v1.0.0rc1-Windows
