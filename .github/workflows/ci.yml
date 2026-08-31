@@ -23,6 +23,7 @@ jobs:
       - run: python -m aquasentinel architecture
       - run: python -m aquasentinel run --scenario dosing_event --samples 7
       - run: python -m aquasentinel live --scenario optimization --samples 1 --refresh-rate 10
+      - run: python -m aquasentinel web --check-only
       - run: python -m aquasentinel incident --scenario dosing_event --step 8
       - run: python -m aquasentinel exam-demo --pause 0
       - run: python -m aquasentinel report --output reports/ci_exam_report.json
@@ -40,7 +41,9 @@ jobs:
               root + 'START_HERE.txt',
               root + 'pyproject.toml',
               root + 'aquasentinel/__main__.py',
+              root + 'aquasentinel/webui.py',
               root + 'tests/test_version.py',
+              root + 'tests/test_webui.py',
               root + 'assets/aquasentinel-terminal.svg',
               root + 'docs/PROJECT_GUIDE.md',
           }
