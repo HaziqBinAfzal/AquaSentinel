@@ -223,7 +223,7 @@ tests/test_webui.py          Browser-interface verification
 .github/workflows/ci.yml     Linux and Windows CI
 ```
 
-The repository still contains supporting analytical modules developed during the project, but the v1.0.0 user workflow is file-driven. No preloaded incident is started by the application.
+The repository still contains supporting analytical modules developed during the project, but the v1.0.0 user workflow is file-driven. No preloaded incident is started by the application, and legacy demo helpers are excluded from the Windows user package.
 
 ---
 
