@@ -2,7 +2,7 @@
 
 ### Local Water / OT Log and Data Analysis Workstation
 
-[![CI](https://github.com/HaziqBinAfzal/AquaSentinel/actions/workflows/ci.yml/badge.svg?branch=build%2Ftopic-133-exam-platform)](https://github.com/HaziqBinAfzal/AquaSentinel/actions/workflows/ci.yml)
+[![CI](https://github.com/HaziqBinAfzal/AquaSentinel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HaziqBinAfzal/AquaSentinel/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-launcher%20verified-556B7D?logo=windows&logoColor=white)
 ![Interface](https://img.shields.io/badge/interfaces-browser%20%2B%20terminal-4F6B7A)
