@@ -2,122 +2,89 @@ from __future__ import annotations
 
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from threading import Timer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 import webbrowser
 
-from .analytics import analyze
-from .incidents import incident_severity, response_plan
-from .ml import QualityMLModel
-from .optimizer import optimize
-from .scenarios import SCENARIOS
-from .security import correlate, events_for
-from .telemetry import sample
+from .ingestion import analyze_content
 
-_MODEL: QualityMLModel | None = None
-
-
-def _model() -> QualityMLModel:
-    global _MODEL
-    if _MODEL is None:
-        _MODEL = QualityMLModel.train_default()
-    return _MODEL
-
-
-def build_state(scenario: str = "normal", step: int = 0, seed: int = 133) -> dict:
-    if scenario not in SCENARIOS:
-        raise ValueError(f"Unknown scenario: {scenario}")
-    step = max(0, int(step))
-    telemetry = sample(scenario, step, seed=seed)
-    result = analyze(telemetry)
-    ml_result = _model().score(telemetry)
-    security_events = events_for(telemetry.cyber_event)
-    correlation = correlate(security_events, result["quality_flags"])
-
-    result["priority"] = max(
-        result["priority"],
-        ml_result["ml_priority"],
-        correlation["correlation_score"],
-    )
-    if ml_result["ml_state"] == "ANOMALOUS" or correlation["correlation_score"] >= 70:
-        result["human_review_required"] = True
-
-    optimization = optimize(telemetry, result).dict()
-    plan = response_plan(result, correlation)
-
-    return {
-        "product": "AquaSentinel AI",
-        "version": "1.0.0",
-        "scenario": scenario,
-        "scenario_description": SCENARIOS[scenario],
-        "step": step,
-        "telemetry": telemetry.dict(),
-        "analysis": result,
-        "ml": ml_result,
-        "security_events": [event.dict() for event in security_events],
-        "correlation": correlation,
-        "optimization": optimization,
-        "incident": {
-            "severity": incident_severity(result, correlation),
-            "steps": [
-                {"stage": item.stage, "action": item.action, "purpose": item.purpose}
-                for item in plan
-            ],
-        },
-        "architecture": ["Enterprise / SOC", "Industrial DMZ", "OT / SCADA", "Safety & Quality", "Synthetic Treatment Process", "Analytics", "Human Review", "Audit / Report"],
-        "process": ["SEA / RAW", "PRETREAT", "HP PUMP", "REVERSE OSMOSIS", "POST-TREAT", "STORAGE"],
-        "assurance": [
-            "NIST SP 800-82 educational OT-security context",
-            "EPA water-quality / public-health reporting context",
-            "WHO risk-based water-safety context",
-        ],
-        "safety": "Synthetic, defensive, read-only classroom simulation. No real PLC, SCADA, dosing or utility control path.",
-    }
-
+MAX_BODY_BYTES = 9 * 1024 * 1024
 
 HTML = r'''<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AquaSentinel AI — Local Operations Dashboard</title>
+<title>AquaSentinel AI — Analysis Workstation</title>
 <style>
-:root{--bg:#07121b;--panel:#0c1d28;--panel2:#102735;--line:#173d4d;--text:#e8f5f8;--muted:#85a7b4;--cyan:#3cd9e6;--blue:#4aa3ff;--green:#39d98a;--amber:#ffbf5f;--red:#ff5d73;--purple:#ba8cff}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#0b2938 0,#07121b 35%,#050b11 100%);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;min-height:100vh}.shell{max-width:1500px;margin:auto;padding:22px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px}.brand{display:flex;gap:14px;align-items:center}.logo{width:46px;height:46px;border:1px solid #2b8094;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#123849,#09202c);box-shadow:0 0 28px #1f859733;font-weight:800;color:var(--cyan)}h1{font-size:23px;margin:0;letter-spacing:.03em}.sub{color:var(--muted);font-size:12px;margin-top:4px}.badge{font-size:11px;border:1px solid #256377;background:#0b2b37;padding:7px 10px;border-radius:999px;color:#aeeaf0}.controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.controls select,.controls button{background:#0b202c;border:1px solid #245065;color:var(--text);padding:9px 12px;border-radius:9px;font-weight:600}.controls button{cursor:pointer}.controls button.primary{background:#0a5968;border-color:#2ec9d7}.banner{border:1px solid #26576a;background:#0a202b;border-radius:12px;padding:10px 14px;color:#b9d9e1;font-size:12px;margin-bottom:16px}.banner b{color:var(--green)}.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px}.metric,.card{background:linear-gradient(180deg,#0d202c,#0a1821);border:1px solid #183b4b;border-radius:13px;box-shadow:0 14px 40px #0005}.metric{padding:14px}.k{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.12em}.v{font-size:24px;font-weight:750;margin-top:6px}.small{font-size:11px;color:var(--muted);margin-top:4px}.grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px}.card{padding:15px;min-width:0}.card h2{font-size:12px;letter-spacing:.12em;color:#a7d7e2;margin:0 0 13px;text-transform:uppercase}.process{grid-column:1/-1}.stages{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.stage{padding:12px 7px;text-align:center;border-radius:10px;background:#0d2633;border:1px solid #1d5062;position:relative;font-size:11px;color:#bdeaf1}.stage:not(:last-child):after{content:'›';position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--cyan);font-size:23px;z-index:2}.stage strong{display:block;color:white;font-size:12px;margin-bottom:5px}.bar{height:8px;border-radius:8px;background:#071016;overflow:hidden;margin-top:8px}.fill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width .35s}.fill.warn{background:linear-gradient(90deg,var(--amber),var(--red))}.rows{display:grid;gap:8px}.row{display:flex;justify-content:space-between;gap:10px;padding-bottom:7px;border-bottom:1px solid #153240;font-size:12px}.row span:first-child{color:var(--muted)}.state{font-weight:750}.good{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}.purple{color:var(--purple)}.chart{height:165px;width:100%;display:block}.event{border-left:3px solid var(--cyan);padding:8px 10px;background:#0c2531;border-radius:5px;margin:7px 0;font-size:11px}.event.red{border-color:var(--red)}.decision{font-size:22px;font-weight:800;margin:7px 0}.timeline{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}.tick{background:#0b2330;border:1px solid #1a4658;border-radius:8px;padding:8px;font-size:9px;min-height:68px}.tick b{display:block;color:#bcecf2;font-size:10px;margin-bottom:5px}.architecture{display:flex;gap:5px;flex-wrap:wrap;align-items:center}.zone{padding:7px 9px;border:1px solid #235568;background:#0c2632;border-radius:7px;font-size:10px}.arrow{color:var(--cyan)}.footer{margin-top:12px;color:#6f939f;text-align:center;font-size:10px}.span2{grid-column:span 2}@media(max-width:1050px){.metrics{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr 1fr}.process{grid-column:1/-1}.span2{grid-column:1/-1}.timeline{grid-template-columns:repeat(4,1fr)}}@media(max-width:680px){.shell{padding:12px}.top{align-items:flex-start;flex-direction:column}.metrics,.grid{grid-template-columns:1fr 1fr}.stages{grid-template-columns:repeat(2,1fr)}.stage:after{display:none}.timeline{grid-template-columns:repeat(2,1fr)}}
+:root{
+  --bg:#eef1f3;--surface:#ffffff;--surface2:#f7f8f9;--ink:#1f2933;--muted:#66737f;
+  --line:#d7dde2;--navy:#20384d;--steel:#3f627c;--green:#3f6f57;--amber:#8a6a2f;--red:#8a4343;
+}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Arial,sans-serif;font-size:14px}
+header{height:64px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:4px solid #182b3b}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:34px;height:34px;border:1px solid #90a5b5;display:grid;place-items:center;font-weight:700;font-size:12px}
+.brand h1{font-size:18px;margin:0;font-weight:600;letter-spacing:.01em}.brand small{display:block;color:#c7d1d9;margin-top:2px;font-size:11px;font-weight:400}
+.status{font-size:11px;color:#dce5eb;border:1px solid #667d90;padding:6px 9px}.wrap{max-width:1380px;margin:22px auto;padding:0 20px 30px}
+.notice{background:#f8f4e8;border:1px solid #d9cba5;color:#5f553e;padding:10px 12px;margin-bottom:14px;font-size:12px}
+.panel{background:var(--surface);border:1px solid var(--line);margin-bottom:14px}.panel-h{padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surface2);font-weight:600;color:#34414c}.panel-b{padding:14px}
+.source{display:grid;grid-template-columns:minmax(280px,1.5fr) 1fr auto;gap:12px;align-items:end}.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+input[type=file]{width:100%;border:1px solid #bdc7cf;background:#fff;padding:9px}.hint{color:var(--muted);font-size:12px;line-height:1.45}
+button{border:1px solid #27455d;background:#294c67;color:#fff;padding:10px 17px;font-weight:600;cursor:pointer}button:hover{background:#203f58}button:disabled{opacity:.55;cursor:not-allowed}
+#empty{padding:54px 20px;text-align:center;color:#6c7780;background:#fff;border:1px solid var(--line)}#empty strong{display:block;color:#3f4a54;font-size:18px;margin-bottom:8px;font-weight:600}
+#dashboard{display:none}.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}.card{background:#fff;border:1px solid var(--line);padding:13px}.label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.value{font-family:Consolas,"Courier New",monospace;font-size:23px;font-weight:600;margin-top:6px}.sub{font-size:11px;color:var(--muted);margin-top:4px}.good{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}.span{grid-column:1/-1}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:8px 9px;border-bottom:1px solid #e1e5e8;text-align:left;vertical-align:top}th{background:#f6f7f8;color:#53606b;font-weight:600}td.num{text-align:right;font-family:Consolas,"Courier New",monospace}
+.pills{display:flex;flex-wrap:wrap;gap:6px}.pill{border:1px solid #c9d1d7;background:#f8f9fa;padding:5px 8px;font-size:11px}.flag{border-left:3px solid var(--amber);background:#fbf8ef;padding:8px 10px;margin-bottom:7px;font-size:12px}.mlbox{border:1px solid #cfd7dd;background:#f8fafb;padding:11px;line-height:1.55}.mono{font-family:Consolas,"Courier New",monospace}.records{max-height:370px;overflow:auto}.records table{min-width:860px}.footer{color:#6b747b;font-size:11px;margin-top:14px;padding:8px 0}.error{display:none;background:#fbefef;border:1px solid #ddbcbc;color:#7b3434;padding:10px 12px;margin-top:10px}
+@media(max-width:1000px){.cards{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.span{grid-column:auto}.source{grid-template-columns:1fr}}@media(max-width:620px){header{padding:0 14px}.status{display:none}.wrap{padding:0 10px}.cards{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
-<body><div class="shell">
-<div class="top"><div class="brand"><div class="logo">AS</div><div><h1>AquaSentinel AI <span style="color:#5fa8bc;font-size:13px">v1.0.0</span></h1><div class="sub">SMART WATER & DESALINATION • LOCAL OPERATIONS / SOC DASHBOARD</div></div></div><div class="controls"><span class="badge">● LOCALHOST / READ ONLY</span><select id="scenario"></select><button id="toggle" class="primary">Pause</button><button id="next">Next frame</button></div></div>
-<div class="banner"><b>SAFE DEMO BOUNDARY:</b> Synthetic telemetry and simulated security evidence only. AI is advisory. No connection or write path to real PLC, SCADA, dosing controllers, utilities or public-health infrastructure.</div>
-<div class="metrics">
-<div class="metric"><div class="k">Overall priority</div><div class="v" id="priority">--</div><div class="bar"><div class="fill" id="prioritybar"></div></div></div>
-<div class="metric"><div class="k">Water quality</div><div class="v" id="quality">--</div><div class="small" id="qualityscore">--</div></div>
-<div class="metric"><div class="k">AI / ML state</div><div class="v" id="ml">--</div><div class="small" id="mlscore">--</div></div>
-<div class="metric"><div class="k">OT correlation</div><div class="v" id="corr">--</div><div class="small" id="corrstate">--</div></div>
-<div class="metric"><div class="k">Optimization</div><div class="v" id="opt">--</div><div class="small">guardrailed advisory</div></div>
-<div class="metric"><div class="k">Decision</div><div class="v" id="decision">--</div><div class="small" id="severity">--</div></div>
+<body>
+<header><div class="brand"><div class="mark">AS</div><div><h1>AquaSentinel AI</h1><small>Local analysis workstation • v1.0.0</small></div></div><div class="status">127.0.0.1 • LOCAL ONLY</div></header>
+<div class="wrap">
+<div class="notice"><b>Analysis boundary:</b> Files are processed by the AquaSentinel process running on this computer. The local interface does not provide PLC, SCADA, dosing or plant-control functions. Classroom water-quality bands are illustrative, not regulatory limits.</div>
+<div class="panel"><div class="panel-h">Data source</div><div class="panel-b source">
+  <div class="field"><label>Select file</label><input id="file" type="file" accept=".log,.txt,.csv,.json,.jsonl"></div>
+  <div class="hint">Supported: LOG, TXT, CSV, JSON and JSONL. Maximum file size: 8 MB. Nothing is preloaded; analysis begins only after a file is selected.</div>
+  <button id="analyze">Analyze file</button>
+</div><div id="error" class="error"></div></div>
+<div id="empty"><strong>No dataset loaded</strong>Select a local log or telemetry file above. AquaSentinel will summarize the source, identify recognized process fields, classify log severity, surface configured indicators and run local anomaly detection when enough numeric data is available.</div>
+<div id="dashboard">
+<div class="cards">
+ <div class="card"><div class="label">Decision</div><div class="value" id="decision">--</div><div class="sub">operator disposition</div></div>
+ <div class="card"><div class="label">Review score</div><div class="value" id="risk">--</div><div class="sub">0–100 evidence score</div></div>
+ <div class="card"><div class="label">Records</div><div class="value" id="records">--</div><div class="sub" id="format">--</div></div>
+ <div class="card"><div class="label">Critical / errors</div><div class="value" id="errors">--</div><div class="sub">classified log entries</div></div>
+ <div class="card"><div class="label">Review flags</div><div class="value" id="flags">--</div><div class="sub">illustrative bands</div></div>
+ <div class="card"><div class="label">ML anomalies</div><div class="value" id="mlcount">--</div><div class="sub" id="mlstate">--</div></div>
 </div>
 <div class="grid">
-<div class="card process"><h2>Synthetic desalination process</h2><div class="stages" id="stages"></div></div>
-<div class="card"><h2>Water quality + process telemetry</h2><div class="rows" id="telemetry"></div></div>
-<div class="card"><h2>AI + predictive maintenance</h2><div class="rows" id="airows"></div><canvas class="chart" id="chart"></canvas></div>
-<div class="card"><h2>OT / SCADA security</h2><div class="rows" id="security"></div><div id="events"></div></div>
-<div class="card"><h2>Resource optimizer</h2><div class="rows" id="optimizer"></div></div>
-<div class="card span2"><h2>Cyber-physical incident response</h2><div class="decision" id="incidentSeverity">--</div><div class="timeline" id="timeline"></div></div>
-<div class="card"><h2>Architecture / trust zones</h2><div class="architecture" id="architecture"></div><h2 style="margin-top:18px">Assurance context</h2><div id="assurance"></div></div>
-</div><div class="footer">AquaSentinel AI • Topic 133 • Browser UI served only on 127.0.0.1 • Synthetic / defensive / read-only</div></div>
+ <section class="panel"><div class="panel-h">Source profile</div><div class="panel-b" id="source"></div></section>
+ <section class="panel"><div class="panel-h">Severity classification</div><div class="panel-b" id="severity"></div></section>
+ <section class="panel span"><div class="panel-h">Recognized water / process fields</div><div class="panel-b"><div class="records"><table><thead><tr><th>Field</th><th>Samples</th><th>Minimum</th><th>Average</th><th>Maximum</th><th>Latest</th></tr></thead><tbody id="metrics"></tbody></table></div></div></section>
+ <section class="panel"><div class="panel-h">Observed indicators</div><div class="panel-b" id="indicators"></div></section>
+ <section class="panel"><div class="panel-h">Local anomaly model</div><div class="panel-b" id="ml"></div></section>
+ <section class="panel span"><div class="panel-h">Items for human review</div><div class="panel-b" id="review"></div></section>
+ <section class="panel span"><div class="panel-h">Recent records</div><div class="panel-b records" id="recent"></div></section>
+</div>
+<div class="footer">AquaSentinel AI • Local defensive analysis • User-supplied data only • No automated industrial control</div>
+</div></div>
 <script>
-const scenarios=['normal','sensor_anomaly','quality_anomaly','dosing_event','fouling','optimization'];const sel=document.getElementById('scenario');scenarios.forEach(x=>{let o=document.createElement('option');o.value=x;o.textContent=x.replace('_',' ').toUpperCase();sel.appendChild(o)});sel.value='normal';let step=0,running=true,hist=[];
-const $=id=>document.getElementById(id);const cls=(v,bad=70,warn=35)=>v>=bad?'bad':v>=warn?'warn':'good';const row=(a,b)=>`<div class="row"><span>${a}</span><strong>${b}</strong></div>`;
-function drawChart(){let c=$('chart'),dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*dpr;c.height=h*dpr;let x=c.getContext('2d');x.scale(dpr,dpr);x.clearRect(0,0,w,h);x.strokeStyle='#173c4b';x.lineWidth=1;for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,h*i/4);x.lineTo(w,h*i/4);x.stroke()}if(hist.length<2)return;function line(key,color,max=100){x.strokeStyle=color;x.lineWidth=2;x.beginPath();hist.forEach((p,i)=>{let px=i*w/Math.max(hist.length-1,1),py=h-(Math.min(max,p[key])/max)*(h-10)-5;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke()}line('priority','#ff6b7f');line('ml','#bb8cff');line('mem','#3cd9e6')}
-function render(d){let t=d.telemetry,a=d.analysis,m=d.ml,c=d.correlation,o=d.optimization;$('priority').textContent=Math.round(a.priority)+'%';$('priority').className='v '+cls(a.priority,85,45);$('prioritybar').style.width=Math.min(100,a.priority)+'%';$('prioritybar').className='fill '+(a.priority>=60?'warn':'');$('quality').textContent=a.quality_state;$('quality').className='v '+(a.quality_score>0?'warn':'good');$('qualityscore').textContent='Rule priority '+a.quality_score+'%';$('ml').textContent=m.ml_state;$('ml').className='v '+(m.ml_state==='ANOMALOUS'?'purple':'good');$('mlscore').textContent='ML priority '+m.ml_priority+'%';$('corr').textContent=c.correlation_score+'%';$('corr').className='v '+cls(c.correlation_score,70,30);$('corrstate').textContent=c.disposition;$('opt').textContent=o.mode;$('opt').className='v '+(o.mode==='HOLD-SAFE'?'warn':'good');let review=a.human_review_required||m.ml_state==='ANOMALOUS'||c.correlation_score>=70;$('decision').textContent=review?'HUMAN REVIEW':'MONITOR';$('decision').className='v '+(review?'warn':'good');$('severity').textContent=d.incident.severity;
-let vals=[['SEA / RAW','Sal '+t.salinity],['PRETREAT','Turb '+t.turbidity],['HP PUMP',t.feed_pressure+' bar'],['REVERSE OSMOSIS',t.ro_pressure+' bar • Mem '+t.membrane_health+'%'],['POST-TREAT','Cl '+t.residual_chlorine],['STORAGE','Tank '+t.tank_level+'%']];$('stages').innerHTML=vals.map(v=>`<div class="stage"><strong>${v[0]}</strong>${v[1]}</div>`).join('');
-$('telemetry').innerHTML=row('pH',t.ph)+row('Conductivity',t.conductivity)+row('Turbidity',t.turbidity)+row('Residual chlorine',t.residual_chlorine)+row('Salinity',t.salinity)+row('Flow rate',t.flow_rate)+row('Tank level',t.tank_level+'%')+row('Energy',t.energy_kwh+' kWh');
-$('airows').innerHTML=row('IsolationForest',m.ml_state)+row('ML priority',m.ml_priority+'%')+row('Membrane health',t.membrane_health+'%')+row('Fouling risk',a.fouling_risk+'%')+row('Maintenance',a.maintenance);
-$('security').innerHTML=row('SCADA evidence',t.cyber_event)+row('Correlation',c.correlation_score+'%')+row('Cyber-physical',c.cyber_physical?'YES':'NO')+row('Evidence sources',c.sources.join(', '));$('events').innerHTML=d.security_events.map(e=>`<div class="event ${e.severity>=70?'red':''}">${e.source||'security'} • ${e.event||e.kind||'observation'} • severity ${e.severity}</div>`).join('')||'<div class="event">Baseline synthetic monitoring • no notable OT event</div>';
-$('optimizer').innerHTML=row('Mode',o.mode)+row('Energy target',o.energy_target_pct+'%')+row('Production target',o.production_target_pct+'%')+row('Quality guardrail',o.quality_guardrail)+row('Control writes','DISABLED');$('incidentSeverity').textContent=d.incident.severity;$('incidentSeverity').className='decision '+(review?'warn':'good');$('timeline').innerHTML=d.incident.steps.map(s=>`<div class="tick"><b>${s.stage}</b>${s.action}</div>`).join('');$('architecture').innerHTML=d.architecture.map((z,i)=>`<span class="zone">${z}</span>${i<d.architecture.length-1?'<span class="arrow">›</span>':''}`).join('');$('assurance').innerHTML=d.assurance.map(x=>`<div class="event">${x}</div>`).join('');hist.push({priority:a.priority,ml:m.ml_priority,mem:t.membrane_health});if(hist.length>32)hist.shift();drawChart()}
-async function load(){try{let r=await fetch(`/api/state?scenario=${encodeURIComponent(sel.value)}&step=${step}`);if(!r.ok)throw Error(await r.text());render(await r.json());}catch(e){console.error(e)}}sel.onchange=()=>{step=0;hist=[];load()};$('toggle').onclick=()=>{running=!running;$('toggle').textContent=running?'Pause':'Resume'};$('next').onclick=()=>{step++;load()};window.onresize=drawChart;load();setInterval(()=>{if(running){step++;load()}},1200);
-</script></body></html>'''
+const $=id=>document.getElementById(id);const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function riskClass(v){return v>=70?'bad':v>=35?'warn':'good'}
+function render(d){$('empty').style.display='none';$('dashboard').style.display='block';$('error').style.display='none';
+ const s=d.summary,src=d.source,m=d.ml;$('decision').textContent=s.decision;$('decision').className='value '+(s.decision==='REVIEW'?'warn':'good');$('risk').textContent=s.risk_score;$('risk').className='value '+riskClass(s.risk_score);$('records').textContent=src.records;$('format').textContent=src.format.toUpperCase();$('errors').textContent=`${s.critical} / ${s.errors}`;$('errors').className='value '+((s.critical+s.errors)>0?'bad':'good');$('flags').textContent=s.review_flags;$('flags').className='value '+(s.review_flags?'warn':'good');$('mlcount').textContent=m.anomaly_count||0;$('mlstate').textContent=m.state;
+ $('source').innerHTML=`<table><tbody><tr><th>File</th><td class="mono">${esc(src.filename)}</td></tr><tr><th>Format</th><td>${esc(src.format.toUpperCase())}</td></tr><tr><th>Records read</th><td>${src.records}</td></tr><tr><th>Fields detected</th><td>${src.fields.length}</td></tr></tbody></table><div class="pills" style="margin-top:10px">${src.fields.map(x=>`<span class="pill mono">${esc(x)}</span>`).join('')}</div>`;
+ const sev=d.severity_counts;let sevRows=Object.keys(sev).sort().map(k=>`<tr><td>${esc(k)}</td><td class="num">${sev[k]}</td></tr>`).join('');$('severity').innerHTML=sevRows?`<table><thead><tr><th>Class</th><th>Count</th></tr></thead><tbody>${sevRows}</tbody></table>`:'No severity terms were identified.';
+ let metricRows=Object.entries(d.metrics).map(([k,v])=>`<tr><td class="mono">${esc(k)}</td><td class="num">${v.count}</td><td class="num">${v.min}</td><td class="num">${v.avg}</td><td class="num">${v.max}</td><td class="num">${v.last}</td></tr>`).join('');$('metrics').innerHTML=metricRows||'<tr><td colspan="6">No configured water/process telemetry fields were recognized in this file.</td></tr>';
+ const inds=Object.entries(d.indicators);$('indicators').innerHTML=inds.length?`<table><thead><tr><th>Term</th><th>Count</th></tr></thead><tbody>${inds.map(([k,v])=>`<tr><td class="mono">${esc(k)}</td><td class="num">${v}</td></tr>`).join('')}</tbody></table>`:'No configured log or OT/security indicators were found.';
+ $('ml').innerHTML=`<div class="mlbox"><b>${esc(m.state)}</b><br>${esc(m.detail)}<br><br><span class="mono">Features: ${esc((m.features||[]).join(', ')||'none')}</span></div>`;
+ $('review').innerHTML=d.review_flags.length?d.review_flags.map(f=>`<div class="flag"><b class="mono">${esc(f.field)}</b> — ${f.outside_band} of ${f.count} values outside the illustrative classroom review band.</div>`).join(''):`<span class="good">No configured classroom-band exceptions were found.</span>`;
+ const rows=d.recent_records;if(!rows.length){$('recent').textContent='No records available.';return}let keys=[];rows.forEach(x=>Object.keys(x.record).forEach(k=>{if(!keys.includes(k)&&keys.length<10)keys.push(k)}));$('recent').innerHTML=`<table><thead><tr><th>#</th>${keys.map(k=>`<th>${esc(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr><td class="num">${x.index}</td>${keys.map(k=>`<td class="mono">${esc(x.record[k]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+$('analyze').onclick=async()=>{const f=$('file').files[0];if(!f){$('error').textContent='Select a supported file first.';$('error').style.display='block';return}if(f.size>8*1024*1024){$('error').textContent='The selected file is larger than 8 MB.';$('error').style.display='block';return}const btn=$('analyze');btn.disabled=true;btn.textContent='Analyzing…';try{const content=await f.text();const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:f.name,content})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Analysis failed');render(d)}catch(e){$('error').textContent=e.message;$('error').style.display='block'}finally{btn.disabled=false;btn.textContent='Analyze file'}};
+</script>
+</body></html>'''
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -128,6 +95,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Content-Security-Policy", "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'")
         self.end_headers()
         self.wfile.write(body)
 
@@ -137,21 +105,35 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, "text/html; charset=utf-8", HTML.encode("utf-8"))
             return
         if parsed.path == "/api/health":
-            body = json.dumps({"ok": True, "mode": "synthetic-read-only", "version": "1.0.0"}).encode()
+            body = json.dumps({"ok": True, "mode": "local-file-analysis", "version": "1.0.0"}).encode()
             self._send(200, "application/json; charset=utf-8", body)
             return
-        if parsed.path == "/api/state":
-            query = parse_qs(parsed.query)
-            scenario = query.get("scenario", ["normal"])[0]
-            try:
-                step = int(query.get("step", ["0"])[0])
-                state = build_state(scenario, step)
-            except (ValueError, TypeError) as exc:
-                self._send(400, "application/json; charset=utf-8", json.dumps({"error": str(exc)}).encode())
-                return
-            self._send(200, "application/json; charset=utf-8", json.dumps(state).encode("utf-8"))
-            return
         self._send(404, "text/plain; charset=utf-8", b"Not found")
+
+    def do_POST(self) -> None:  # noqa: N802
+        if urlparse(self.path).path != "/api/analyze":
+            self._send(404, "text/plain; charset=utf-8", b"Not found")
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self._send(400, "application/json; charset=utf-8", b'{"error":"Invalid content length"}')
+            return
+        if length <= 0 or length > MAX_BODY_BYTES:
+            self._send(413, "application/json; charset=utf-8", b'{"error":"Request is empty or too large"}')
+            return
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            filename = Path(str(payload.get("filename", ""))).name
+            content = payload.get("content", "")
+            if not filename or not isinstance(content, str):
+                raise ValueError("A filename and text content are required")
+            result = analyze_content(filename, content)
+            body = json.dumps(result, ensure_ascii=False).encode("utf-8")
+            self._send(200, "application/json; charset=utf-8", body)
+        except (ValueError, json.JSONDecodeError) as exc:
+            body = json.dumps({"error": str(exc)}).encode("utf-8")
+            self._send(400, "application/json; charset=utf-8", body)
 
     def log_message(self, format: str, *args) -> None:  # noqa: A002
         return
@@ -161,21 +143,21 @@ def run_web(port: int = 8765, open_browser: bool = True, check_only: bool = Fals
     if not 1024 <= int(port) <= 65535:
         raise SystemExit("--port must be between 1024 and 65535")
     if check_only:
-        state = build_state("dosing_event", 8)
-        if not state["safety"].startswith("Synthetic"):
-            raise RuntimeError("Local dashboard safety boundary check failed")
-        if state["optimization"]["mode"] != "HOLD-SAFE":
-            raise RuntimeError("Local dashboard guardrail check failed")
+        probe = "timestamp,severity,ph,turbidity\n2026-01-01T00:00:00Z,info,7.2,0.3\n"
+        result = analyze_content("check.csv", probe)
+        if result["source"]["records"] != 1 or result["source"]["format"] != "csv":
+            raise SystemExit("Local web analysis self-check failed")
         print("Local web dashboard check passed")
         return
 
     address = ("127.0.0.1", int(port))
     url = f"http://127.0.0.1:{port}/"
     server = ThreadingHTTPServer(address, _Handler)
-    print("AquaSentinel AI local dashboard")
+    print("AquaSentinel AI — local analysis workstation")
     print(f"Open: {url}")
-    print("BOUNDARY: localhost only; synthetic / defensive / read-only")
-    print("Press Ctrl+C to stop the local dashboard.")
+    print("Select a local .log, .txt, .csv, .json or .jsonl file in the browser.")
+    print("No data is preloaded. The server is bound to 127.0.0.1 only.")
+    print("Press Ctrl+C to stop.")
     if open_browser:
         Timer(0.7, lambda: webbrowser.open(url)).start()
     try:
@@ -184,4 +166,4 @@ def run_web(port: int = 8765, open_browser: bool = True, check_only: bool = Fals
         pass
     finally:
         server.server_close()
-        print("AquaSentinel local dashboard stopped")
+        print("AquaSentinel local analysis workstation stopped")
