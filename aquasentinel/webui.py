@@ -162,8 +162,10 @@ def run_web(port: int = 8765, open_browser: bool = True, check_only: bool = Fals
         raise SystemExit("--port must be between 1024 and 65535")
     if check_only:
         state = build_state("dosing_event", 8)
-        assert state["safety"].startswith("Synthetic")
-        assert state["optimization"]["mode"] == "HOLD-SAFE"
+        if not state["safety"].startswith("Synthetic"):
+            raise RuntimeError("Local dashboard safety boundary check failed")
+        if state["optimization"]["mode"] != "HOLD-SAFE":
+            raise RuntimeError("Local dashboard guardrail check failed")
         print("Local web dashboard check passed")
         return
 
