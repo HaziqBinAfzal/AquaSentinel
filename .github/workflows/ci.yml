@@ -15,8 +15,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install --upgrade pip
-      - run: pip install -e . pytest
+      - run: pip install -e '.[dev]'
+      - run: ruff check aquasentinel tests
+      - run: bandit -q -r aquasentinel
       - run: pytest -q
+      - run: python -m aquasentinel doctor
       - run: python -m aquasentinel architecture
       - run: python -m aquasentinel run --scenario dosing_event --samples 7
+      - run: python -m aquasentinel live --scenario optimization --samples 1 --refresh-rate 10
       - run: python -m aquasentinel report --output reports/ci_exam_report.json
