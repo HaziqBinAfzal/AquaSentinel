@@ -14,6 +14,14 @@
 
 > **Examiner quick start:** On Windows, download/clone the repository and double-click `AquaSentinel.bat`. It prepares the isolated environment, verifies the project, runs its automated quality/security checks and then starts the guided Topic 133 demonstration.
 
+## Verified Terminal Preview
+
+The preview below was reproduced from the verified release-candidate code using the controlled `dosing_event` scenario at step 8. It shows the actual deterministic values produced by AquaSentinel for that classroom scenario: water-quality review, synthetic OT evidence, 99% cyber/process correlation, the `HOLD-SAFE` advisory state and final `HUMAN REVIEW` decision.
+
+![AquaSentinel AI verified terminal preview](assets/aquasentinel-terminal.svg)
+
+> This is a documentation rendering of real deterministic project output, not a mock operational plant screen. All values and events are synthetic.
+
 ---
 
 ## Project Overview
@@ -191,19 +199,7 @@ This demonstrates response reasoning without providing commands for operating re
 
 AquaSentinel is intentionally terminal-first. The live console is designed to look and behave more like an operations/SOC view than a normal Python script.
 
-The dashboard presents:
-
-- desalination process stages;
-- live synthetic pressure, flow, tank and membrane conditions;
-- water-quality measurements and validation flags;
-- AI anomaly state and priority;
-- OT/SCADA security evidence;
-- cyber-physical correlation;
-- overall risk level;
-- predictive-maintenance information;
-- guarded optimization recommendations;
-- recent events and audit state;
-- a permanent synthetic/read-only safety boundary.
+The dashboard presents water-treatment stages, synthetic pressure/flow/tank/membrane conditions, water-quality measurements, AI anomaly state, OT/SCADA evidence, cyber-physical correlation, predictive-maintenance information, guarded optimization recommendations, recent events and the synthetic/read-only safety boundary.
 
 Example:
 
@@ -211,7 +207,7 @@ Example:
 aquasentinel live --scenario dosing_event --samples 40 --refresh-rate 4 --fullscreen
 ```
 
-The live mode is optimized to update one terminal layout rather than repeatedly printing large dashboards, keeping the demonstration responsive and readable.
+The live mode updates one terminal layout rather than repeatedly printing large dashboards, keeping the demonstration responsive and readable.
 
 ---
 
@@ -290,27 +286,7 @@ After installation, the complete guided demonstration can be started with:
 aquasentinel exam-demo
 ```
 
-The sequence automatically walks through:
-
-```text
-Normal desalination operation
-        |
-Water-quality anomaly
-        |
-AI anomaly detection
-        |
-OT / SCADA security evidence
-        |
-Cyber-physical correlation
-        |
-Human-led incident response
-        |
-Predictive maintenance
-        |
-Resource optimization
-        |
-DevSecOps / assurance evidence
-```
+The sequence automatically walks through normal desalination operation, water-quality anomalies, AI anomaly detection, OT/SCADA evidence, cyber-physical correlation, human-led incident response, predictive maintenance, resource optimization and DevSecOps/assurance evidence.
 
 Each section explains what is being demonstrated before presenting the project output, making the mode useful both for an oral examination and for reviewing how the modules connect.
 
@@ -354,33 +330,7 @@ aquasentinel report
 
 ## Example Examiner Walkthrough
 
-A short way to review the project manually is:
-
-```text
-1. AquaSentinel.bat
-       or
-   aquasentinel doctor
-
-2. aquasentinel architecture
-
-3. aquasentinel live --scenario normal --samples 10
-
-4. aquasentinel live --scenario quality_anomaly --samples 12
-
-5. aquasentinel live --scenario dosing_event --samples 12
-
-6. aquasentinel incident --scenario dosing_event --step 8
-
-7. aquasentinel live --scenario fouling --samples 15
-
-8. aquasentinel live --scenario optimization --samples 12
-
-9. aquasentinel compliance
-
-10. aquasentinel report
-```
-
-Or simply run `aquasentinel exam-demo` to let AquaSentinel guide the sequence automatically.
+The simplest review path is `AquaSentinel.bat` or `aquasentinel exam-demo`. For manual inspection, the examiner can use `aquasentinel doctor`, `architecture`, the controlled `normal`, `quality_anomaly`, `dosing_event`, `fouling` and `optimization` scenarios, the `incident` view, `compliance`, and finally `report`.
 
 ---
 
@@ -420,7 +370,8 @@ AquaSentinel/
 |
 |-- tests/                    Automated verification
 |-- docs/                     Detailed project/release documentation
-|-- tools/                    Distribution build tooling
+|-- scripts/                  Distribution build tooling
+|-- assets/                   Examiner-facing terminal preview
 `-- .github/workflows/        Continuous-integration pipeline
 ```
 
@@ -432,37 +383,9 @@ The modules are deliberately separated so telemetry generation, AI, security cor
 
 AquaSentinel is not presented as a single untested demonstration script. The repository includes an automated CI pipeline that verifies the project after changes.
 
-The pipeline performs:
+The pipeline performs installation, Ruff static checks, Bandit defensive security scanning, Pytest, environment-doctor validation, architecture/scenario/live/incident/exam-demo smoke tests, exam-report generation and the Windows distribution-package build.
 
-```text
-Install project
-     |
-Ruff static checks
-     |
-Bandit defensive security scan
-     |
-Pytest automated tests
-     |
-Environment doctor
-     |
-Architecture smoke test
-     |
-Scenario smoke test
-     |
-Live dashboard smoke test
-     |
-Incident-response smoke test
-     |
-Full guided exam-demo smoke test
-     |
-Exam report generation
-     |
-Build distributable Windows ZIP
-```
-
-The test suite also verifies that the Python package and project metadata report the same version.
-
-This is included to demonstrate the DevSecOps side of Topic 133: changes should be testable, repeatable and reviewable rather than manually trusted.
+The test suite also verifies that the Python package and project metadata report the same version. This demonstrates the DevSecOps side of Topic 133: changes should be testable, repeatable and reviewable rather than manually trusted.
 
 ---
 
