@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="690" viewBox="0 0 1400 690" role="img" aria-label="AquaSentinel AI synthetic dosing event terminal output">
+  <rect width="1400" height="690" rx="18" fill="#111827"/>
+  <rect x="1" y="1" width="1398" height="688" rx="18" fill="none" stroke="#334155" stroke-width="2"/>
+  <circle cx="34" cy="30" r="7" fill="#ef4444"/><circle cx="58" cy="30" r="7" fill="#f59e0b"/><circle cx="82" cy="30" r="7" fill="#22c55e"/>
+  <g font-family="Consolas, 'Courier New', monospace" fill="#e5e7eb">
+    <text x="700" y="38" text-anchor="middle" font-size="18" font-weight="700">AquaSentinel AI — Synthetic Dosing Event Demo</text>
+    <text x="35" y="83" font-size="18" fill="#67e8f9">SYNTHETIC DESALINATION PROCESS</text>
+    <text x="35" y="116" font-size="17">RAW/SEA WATER → PRETREATMENT → HP PUMP → REVERSE OSMOSIS → POST-TREATMENT → STORAGE → DISTRIBUTION</text>
+    <line x1="35" y1="139" x2="1365" y2="139" stroke="#334155"/>
+    <text x="35" y="178" font-size="19" font-weight="700" fill="#93c5fd">AquaSentinel AI | dosing_event</text>
+    <text x="35" y="221" font-size="17" fill="#94a3b8">DOMAIN</text><text x="290" y="221" font-size="17" fill="#94a3b8">LIVE EVIDENCE</text><text x="1010" y="221" font-size="17" fill="#94a3b8">ASSESSMENT</text>
+    <line x1="35" y1="238" x2="1365" y2="238" stroke="#475569"/>
+    <text x="35" y="273" font-size="17">Water quality</text><text x="290" y="273" font-size="17">pH 7.23 | Cond 419.5 | Turb 0.36 | Cl 0.22 | Sal 0.45</text><text x="1010" y="273" font-size="17" fill="#fbbf24">SENSOR/PROCESS REVIEW | 22%</text>
+    <text x="35" y="318" font-size="17">RO process</text><text x="290" y="318" font-size="17">Feed 4.49 | RO 57.8 bar | Flow 105.19 | Membrane 91.5%</text><text x="1010" y="318" font-size="17">Fouling risk 18.7%</text>
+    <text x="35" y="363" font-size="17">OT security</text><text x="290" y="363" font-size="17" fill="#fca5a5">unexpected_dosing_command</text><text x="1010" y="363" font-size="17" fill="#f87171">Cyber priority 95%</text>
+    <text x="35" y="408" font-size="17">Correlation</text><text x="290" y="408" font-size="17">scada-audit, suricata-sim, zeek-sim</text><text x="1010" y="408" font-size="17" fill="#f87171">99% | HIGH PRIORITY</text>
+    <text x="35" y="453" font-size="17">ML anomaly</text><text x="290" y="453" font-size="17">IsolationForest over 12 process features</text><text x="1010" y="453" font-size="17" fill="#86efac">EXPECTED | 23.5%</text>
+    <text x="35" y="498" font-size="17">AI optimization</text><text x="290" y="498" font-size="17">Mode HOLD-SAFE | Energy target 100% | Production 100%</text><text x="1010" y="498" font-size="17" fill="#fbbf24">QUALITY/SECURITY OVERRIDE</text>
+    <text x="35" y="543" font-size="17">Decision</text><text x="290" y="543" font-size="17">Rules + ML + cyber + process context</text><text x="1010" y="543" font-size="18" font-weight="700" fill="#f87171">HUMAN REVIEW</text>
+    <line x1="35" y1="568" x2="1365" y2="568" stroke="#475569"/>
+    <text x="35" y="610" font-size="17" font-weight="700" fill="#67e8f9">SAFETY &amp; DECISION BOUNDARY</text>
+    <text x="35" y="644" font-size="17">Priority: 99% | Scenario: dosing_event | Boundary: simulation only — no PLC/SCADA writes</text>
+  </g>
+</svg>
