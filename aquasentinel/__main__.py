@@ -9,6 +9,7 @@ from .audit import record
 from .compliance import report
 from .dashboard import architecture, render
 from .ml import QualityMLModel
+from .reporting import generate_exam_report
 from .scenarios import SCENARIOS
 from .security import correlate, events_for
 from .telemetry import sample
@@ -83,6 +84,8 @@ def main() -> None:
     sub.add_parser("architecture")
     sub.add_parser("compliance")
     sub.add_parser("ml-check")
+    export = sub.add_parser("report")
+    export.add_argument("--output", default="reports/aquasentinel_exam_report.json")
     args = p.parse_args()
     if args.cmd == "run":
         run_scenario(args.scenario, args.samples, args.delay, not args.no_ml)
@@ -95,6 +98,9 @@ def main() -> None:
         for scenario in SCENARIOS:
             t = sample(scenario, 8)
             console.print(f"{scenario:16} {model.score(t)}")
+    elif args.cmd == "report":
+        path = generate_exam_report(args.output)
+        console.print(f"[green]Exam evidence report written to {path}[/green]")
     else:
         demo()
 
