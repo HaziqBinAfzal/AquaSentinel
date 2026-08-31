@@ -23,6 +23,9 @@ dev = [
 [project.scripts]
 aquasentinel = "aquasentinel.__main__:main"
 
+[tool.setuptools.packages.find]
+include = ["aquasentinel*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
