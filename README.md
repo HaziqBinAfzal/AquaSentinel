@@ -5,6 +5,7 @@
 [![CI](https://github.com/HaziqBinAfzal/AquaSentinel/actions/workflows/ci.yml/badge.svg?branch=build%2Ftopic-133-exam-platform)](https://github.com/HaziqBinAfzal/AquaSentinel/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-launcher%20verified-0078D4?logo=windows&logoColor=white)
+![Local UI](https://img.shields.io/badge/UI-localhost%20dashboard-14B8A6)
 ![Release](https://img.shields.io/badge/release-v1.0.0-0A7EA4)
 ![Project](https://img.shields.io/badge/project-EduQual%20Level%206-4C6EF5)
 ![Mode](https://img.shields.io/badge/mode-synthetic%20%7C%20defensive%20%7C%20read--only-2E8B57)
@@ -13,7 +14,7 @@
 **Student:** Haziq Shahzad  
 **Final Release:** v1.0.0
 
-> **Examiner quick start:** On Windows, download or clone the repository, extract it to a normal folder and double-click `AquaSentinel.bat`. It configures UTF-8 terminal output, verifies Python 3.10+, creates an isolated environment, installs the project, runs automated quality/security checks and functional smoke tests, then starts the guided Topic 133 demonstration.
+> **Examiner quick start:** On Windows, extract the project and double-click `AquaSentinel.bat`. AquaSentinel verifies the environment and project first, then starts a local browser dashboard at **`http://127.0.0.1:8765/`** automatically. The original terminal demonstrations remain available as separate commands.
 
 ## Verified Terminal Preview
 
@@ -27,17 +28,72 @@ The preview below represents AquaSentinel's deterministic `dosing_event` classro
 
 ## Project Overview
 
-AquaSentinel AI is a terminal-first educational platform demonstrating how artificial intelligence, operational technology security, water-quality monitoring, predictive maintenance and resource optimization can be combined around a modern desalination and critical-water environment.
+AquaSentinel AI is a safe educational platform demonstrating how artificial intelligence, operational technology security, water-quality monitoring, predictive maintenance and resource optimization can be combined around a modern desalination and critical-water environment.
 
 The project was created for Topic 133:
 
 > **Orchestrating Smart Water and Desalination Infrastructure Security Platform with OT Protection, Quality Monitoring, and AI-Driven Resource Optimization for Critical Water Systems.**
 
-Instead of presenting the topic only as theory, AquaSentinel turns the main concepts into an interactive and explainable demonstration. It generates controlled synthetic desalination telemetry, evaluates water-quality conditions, applies a real `scikit-learn` IsolationForest anomaly model, correlates simulated OT/SCADA evidence, estimates membrane-fouling risk, produces guardrailed resource recommendations and presents the result through an industrial-style terminal dashboard.
+AquaSentinel provides **two presentation interfaces** over the same synthetic analytics engine:
+
+1. a professional localhost browser dashboard for visual demonstration; and
+2. an industrial-style terminal/SOC interface for transparent command-line inspection.
+
+The platform generates controlled synthetic desalination telemetry, evaluates water-quality conditions, applies a real `scikit-learn` IsolationForest anomaly model, correlates simulated OT/SCADA evidence, estimates membrane-fouling risk, produces guardrailed resource recommendations and presents the same evidence through both interfaces.
 
 The central design principle is simple: **AI remains advisory**. Water quality, cybersecurity evidence, engineering constraints, public-health considerations and human authority remain above automated recommendations.
 
 > **Safety boundary:** AquaSentinel is a synthetic, defensive classroom project. It does not connect to, operate, control or modify a real water utility, desalination plant, PLC, SCADA system, dosing controller or public-health infrastructure. Thresholds and response logic are illustrative and are not operational or regulatory instructions.
+
+---
+
+## Localhost Operations Dashboard
+
+AquaSentinel now includes a full browser UI served entirely from the local machine.
+
+```text
+http://127.0.0.1:8765/
+```
+
+It uses Python's local HTTP server and the existing AquaSentinel analytics modules. No cloud service, external API, database or real industrial connection is required.
+
+The dashboard displays:
+
+- the complete synthetic desalination process from sea/raw water through storage;
+- pH, conductivity, turbidity, residual chlorine and salinity;
+- feed pressure, RO pressure, flow, tank level, energy and membrane health;
+- rule-based water-quality priority;
+- IsolationForest AI anomaly state and ML priority;
+- simulated SCADA/Zeek/Suricata-style evidence;
+- cyber-physical correlation score and evidence sources;
+- predictive-maintenance / membrane-fouling risk;
+- guardrailed energy and production optimization mode;
+- overall risk and `MONITOR` / `HUMAN REVIEW` decision;
+- the complete eight-stage incident-response timeline;
+- trust-zone architecture and assurance context;
+- selectable `normal`, `sensor_anomaly`, `quality_anomaly`, `dosing_event`, `fouling` and `optimization` scenarios;
+- live automatic refresh, pause/resume and frame stepping; and
+- a permanent synthetic / defensive / read-only safety banner.
+
+The UI is deliberately bound to **`127.0.0.1` only**. It is a local visualization layer, not a remotely exposed control panel.
+
+### Start the browser UI manually
+
+```bash
+aquasentinel web
+```
+
+The default browser opens automatically. To choose another local port:
+
+```bash
+aquasentinel web --port 9000
+```
+
+For automated verification without starting a server:
+
+```bash
+aquasentinel web --check-only
+```
 
 ---
 
@@ -46,6 +102,7 @@ The central design principle is simple: **AI remains advisory**. Water quality, 
 | Area | Project demonstration |
 | --- | --- |
 | **Water Treatment / Desalination** | Synthetic raw/sea-water, pretreatment, high-pressure pumping, reverse osmosis, post-treatment and storage context |
+| **Local Browser UI** | Real-time localhost operations dashboard showing process, quality, AI, OT evidence, risk, optimization and incident response |
 | **OT / SCADA Security** | Segmented architecture and passive synthetic Zeek-style, Suricata-style and SCADA-audit evidence |
 | **Water Quality** | pH, conductivity, turbidity, residual chlorine and salinity monitoring with cross-sensor reasoning |
 | **Artificial Intelligence** | IsolationForest anomaly detection over multiple process features |
@@ -53,7 +110,7 @@ The central design principle is simple: **AI remains advisory**. Water quality, 
 | **Predictive Maintenance** | Membrane health, pressure, flow and energy patterns used for synthetic fouling-risk analysis |
 | **Resource Optimization** | Advisory energy and production recommendations with quality, security and equipment guardrails |
 | **Incident Response** | Human-led eight-stage response workflow from detection through evidence preservation |
-| **DevSecOps** | Pytest, Ruff, Bandit, CI, package-integrity checking and real Windows launcher verification |
+| **DevSecOps** | Pytest, Ruff, Bandit, CI, package-integrity checking, web-dashboard tests and real Windows launcher verification |
 | **Audit / Reporting** | JSONL audit evidence and structured JSON exam reports |
 | **Assurance Context** | Educational mapping to NIST SP 800-82 concepts and EPA/WHO water-safety context |
 
@@ -87,10 +144,10 @@ The central design principle is simple: **AI remains advisory**. Water quality, 
               Maintenance / Optimization
                            |
                       Human Review
-                           |
-                 Terminal Dashboard
-                           |
-                    Audit / Report
+                      /         \
+            Terminal Console   Localhost UI
+                      \         /
+                       Audit / Report
 ```
 
 Synthetic process path:
@@ -105,7 +162,7 @@ Raw / Sea Water
       -> Distribution Context
 ```
 
-AquaSentinel is deliberately read-only from the application's perspective. It analyzes synthetic evidence and contains no path for issuing commands to real industrial controllers.
+AquaSentinel is deliberately read-only from the application's perspective. Both the terminal and browser interfaces analyze synthetic evidence and contain no path for issuing commands to real industrial controllers.
 
 ---
 
@@ -151,11 +208,13 @@ The workflow explains safe decision-making without providing real industrial-con
 
 ## Industrial Terminal Dashboard
 
-The Rich-based live console is designed to feel closer to an operator/SOC view than a normal Python script while remaining lightweight enough for an exam laptop. It shows the desalination process, live synthetic measurements, water-quality status, AI anomaly state, simulated OT evidence, cyber-physical correlation, overall risk, maintenance information, guardrailed optimization advice, recent events and the permanent synthetic/read-only boundary.
+The Rich-based live console remains available for a terminal-first demonstration. It shows the same underlying synthetic process, water-quality, ML, OT security, risk and optimization evidence.
 
 ```bash
 aquasentinel live --scenario dosing_event --samples 40 --refresh-rate 4 --fullscreen
 ```
+
+The browser UI and terminal UI are complementary: the browser is better for a visual examiner walkthrough, while the terminal makes the project logic and CLI workflow easy to inspect.
 
 ---
 
@@ -184,7 +243,17 @@ Extract the final package or repository to a normal folder and double-click:
 AquaSentinel.bat
 ```
 
-The launcher automatically switches Command Prompt to UTF-8, enables UTF-8 Python I/O, detects `py -3` or `python`, verifies Python 3.10+, creates `.venv`, installs AquaSentinel and verification dependencies, runs the environment doctor, Pytest, Ruff, Bandit and functional smoke tests, and starts the complete guided Topic 133 demo only if every check passes.
+The launcher automatically:
+
+1. switches Command Prompt to UTF-8 and enables UTF-8 Python I/O;
+2. detects `py -3` or `python` and verifies Python 3.10+;
+3. creates `.venv` and installs AquaSentinel plus verification tools;
+4. runs the environment doctor, Pytest, Ruff and Bandit;
+5. smoke-tests architecture, scenarios, incidents, reporting and the local web-dashboard data path;
+6. prints `ALL CHECKS PASSED` only when verification succeeds; and
+7. starts the localhost dashboard at `http://127.0.0.1:8765/` and opens the browser automatically.
+
+Keep the launcher terminal open while using the local dashboard. Press `Ctrl+C` in that terminal to stop the server.
 
 ### Windows compatibility
 
@@ -201,7 +270,7 @@ AquaSentinel.bat --check-only
 ```bash
 chmod +x install.sh run_exam_demo.sh
 ./install.sh
-./run_exam_demo.sh
+aquasentinel web
 ```
 
 ### Manual installation
@@ -214,23 +283,26 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
 aquasentinel doctor
+aquasentinel web
 ```
 
 ---
 
-## One-Command Guided Oral Exam
+## One-Command Guided Terminal Oral Exam
 
 ```bash
 aquasentinel exam-demo
 ```
 
-The guided sequence covers normal operation, water-quality anomalies, AI anomaly detection, OT/SCADA evidence, cyber-physical correlation, incident response, predictive maintenance, resource optimization, DevSecOps and assurance evidence.
+The guided terminal sequence covers normal operation, water-quality anomalies, AI anomaly detection, OT/SCADA evidence, cyber-physical correlation, incident response, predictive maintenance, resource optimization, DevSecOps and assurance evidence.
 
 ---
 
 ## Useful Manual Commands
 
 ```bash
+aquasentinel web
+aquasentinel web --port 9000
 aquasentinel doctor
 aquasentinel architecture
 aquasentinel exam-demo
@@ -258,10 +330,14 @@ Automated setup + verification
           |
 ALL CHECKS PASSED
           |
-Guided Topic 133 demonstration
+Browser opens on 127.0.0.1:8765
+          |
+Select scenarios and explain live evidence
+          |
+Optional terminal exam-demo / SOC dashboard
 ```
 
-The examiner can also inspect `doctor`, `architecture`, `live`, `incident`, `ml-check`, `compliance` and `report` individually.
+For a visual presentation, start with the browser UI and switch between `normal`, `quality_anomaly`, `dosing_event`, `fouling` and `optimization`. The examiner can then inspect `doctor`, `architecture`, `live`, `incident`, `ml-check`, `compliance` and `report` individually if needed.
 
 ---
 
@@ -270,18 +346,33 @@ The examiner can also inspect `doctor`, `architecture`, `live`, `incident`, `ml-
 ```text
 AquaSentinel/
 |
-|-- AquaSentinel.bat          One-file Windows setup / verify / start launcher
+|-- AquaSentinel.bat          One-file Windows setup / verify / localhost launcher
 |-- README.md                 Examiner-facing documentation
 |-- CHANGELOG.md              Release history
 |-- pyproject.toml            Package metadata and dependencies
 |-- requirements.txt          Runtime dependency list
 |-- install.bat               Alternative Windows setup
 |-- install.sh                Linux/macOS setup
-|-- run_exam_demo.bat         Windows guided-demo launcher
-|-- run_exam_demo.sh          Linux/macOS guided-demo launcher
+|-- run_exam_demo.bat         Windows guided terminal demo
+|-- run_exam_demo.sh          Linux/macOS guided terminal demo
 |
-|-- aquasentinel/             Application modules
-|-- tests/                    Automated verification
+|-- aquasentinel/
+|   |-- __main__.py           CLI routing
+|   |-- webui.py              Localhost browser dashboard + JSON state endpoint
+|   |-- live.py               Industrial terminal dashboard
+|   |-- telemetry.py          Synthetic process and quality data
+|   |-- analytics.py          Transparent rule-based analysis
+|   |-- ml.py                 IsolationForest anomaly detection
+|   |-- security.py           Synthetic OT/security correlation
+|   |-- optimizer.py          Guardrailed resource recommendations
+|   |-- incidents.py          Eight-stage response model
+|   |-- presenter.py          Examiner incident brief
+|   |-- doctor.py             Environment/safety validation
+|   |-- reporting.py          Exam-report generation
+|   |-- audit.py              JSONL evidence
+|   `-- scenarios.py          Controlled demonstrations
+|
+|-- tests/                    Automated verification including web UI state tests
 |-- docs/                     Detailed guides and release documentation
 |-- scripts/                  User-package builder
 |-- assets/                   Examiner-facing terminal preview
@@ -292,9 +383,11 @@ AquaSentinel/
 
 ## DevSecOps and Verification
 
-The Linux CI job performs editable installation, Ruff static checks, Bandit defensive security scanning, Pytest, environment-doctor validation, architecture/scenario/live/incident/exam-demo smoke tests, exam-report generation, the final Windows ZIP build and ZIP-content integrity verification.
+The Linux CI job performs editable installation, Ruff static checks, Bandit defensive security scanning, Pytest, environment-doctor validation, architecture/scenario/live/**web-dashboard**/incident/exam-demo smoke tests, exam-report generation, the final Windows ZIP build and ZIP-content integrity verification.
 
-A separate `windows-latest` job executes the actual `AquaSentinel.bat --check-only` path end-to-end. The test suite also confirms that the runtime package version matches the package metadata version.
+A separate `windows-latest` job executes the actual `AquaSentinel.bat --check-only` path end-to-end. That Windows launcher path now also validates the web-dashboard state builder before it is allowed to report success.
+
+The generated ZIP is checked to ensure that `aquasentinel/webui.py` and its tests are actually included in the examiner package.
 
 ---
 
@@ -306,7 +399,7 @@ The v1.0.0 build produces:
 AquaSentinel-v1.0.0-Windows.zip
 ```
 
-The distribution contains the application code, tests, documentation, assets, launchers, package metadata and `START_HERE.txt`. CI opens the generated ZIP and verifies required files before uploading it. Generated virtual environments, audit output, reports, caches and development build directories are excluded.
+The distribution contains the browser UI, terminal UI, application code, tests, documentation, assets, launchers, package metadata and `START_HERE.txt`. Generated virtual environments, audit output, reports, caches and development build directories are excluded.
 
 ---
 
@@ -316,7 +409,7 @@ The distribution contains the application code, tests, documentation, assets, la
 aquasentinel report
 ```
 
-The report records controlled scenario telemetry, analytical results, AI state, simulated security evidence and correlation results so the project demonstrates traceability instead of presenting only transient terminal output.
+The report records controlled scenario telemetry, analytical results, AI state, simulated security evidence and correlation results so the project demonstrates traceability instead of presenting only transient dashboard output.
 
 ---
 
@@ -330,7 +423,9 @@ These mappings are educational. AquaSentinel does **not** claim certification, f
 
 ## Oral Examination Explanation
 
-The main idea behind AquaSentinel is that AI should support an operator, not silently replace engineering or public-health judgement. If one sensor becomes unusual, the platform checks other evidence instead of automatically calling it contamination. If a cyber event appears, it compares the cyber observation with process and quality information before judging possible physical impact. If an optimization recommendation conflicts with quality or security conditions, optimization is held and human review is requested.
+The main idea behind AquaSentinel is that AI should support an operator, not silently replace engineering or public-health judgement. The local dashboard makes this relationship visible: water-quality rules, ML, OT evidence, correlation, maintenance and optimization are shown side by side before the final `MONITOR` or `HUMAN REVIEW` decision.
+
+If one sensor becomes unusual, the platform checks other evidence instead of automatically calling it contamination. If a cyber event appears, it compares the cyber observation with process and quality information before judging possible physical impact. If an optimization recommendation conflicts with quality or security conditions, optimization is held and human review is requested.
 
 That relationship between **OT cybersecurity, water quality, AI, engineering constraints and human decision-making** is the core idea demonstrated by the project.
 
@@ -338,7 +433,7 @@ That relationship between **OT cybersecurity, water quality, AI, engineering con
 
 ## Final Release Status
 
-**AquaSentinel AI v1.0.0** is the final examiner-facing release. It includes Linux verification, package-integrity checking, dedicated Windows launcher testing and a Windows-compatible UTF-8 terminal path.
+**AquaSentinel AI v1.0.0** is the examiner-facing release with both terminal and localhost browser interfaces. The release includes Linux verification, package-integrity checking, dedicated Windows launcher testing, Windows-compatible UTF-8 handling and automated local-dashboard verification.
 
 PR #1 remains the controlled release branch until explicit approval is given to merge it into `main`.
 
@@ -346,11 +441,11 @@ PR #1 remains the controlled release branch until explicit approval is given to 
 
 ## Final Safety Statement
 
-**AquaSentinel AI is an educational simulation, not an industrial control product.** All plant data, security events, incidents and optimization outputs are synthetic. The project contains no functionality for connecting to or issuing commands to real PLCs, SCADA systems, dosing equipment or water utilities. Classroom thresholds and assurance mappings are illustrative and must not be treated as real-world operating limits, public-health decisions or regulatory determinations.
+**AquaSentinel AI is an educational simulation, not an industrial control product.** All plant data, security events, incidents and optimization outputs are synthetic. The browser server binds only to localhost and the project contains no functionality for connecting to or issuing commands to real PLCs, SCADA systems, dosing equipment or water utilities. Classroom thresholds and assurance mappings are illustrative and must not be treated as real-world operating limits, public-health decisions or regulatory determinations.
 
 ---
 
 ### AquaSentinel AI v1.0.0
 
 **Topic 133 — Smart Water & Desalination Infrastructure Security**  
-*OT protection • Water-quality monitoring • AI anomaly detection • Cyber-physical correlation • Predictive maintenance • Guardrailed resource optimization • DevSecOps evidence*
+*Localhost operations dashboard • OT protection • Water-quality monitoring • AI anomaly detection • Cyber-physical correlation • Predictive maintenance • Guardrailed resource optimization • DevSecOps evidence*
