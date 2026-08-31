@@ -24,9 +24,12 @@ ROOT_FILES = [
 INCLUDE_DIRS = ["aquasentinel", "tests", "docs", "assets"]
 EXCLUDED_PARTS = {"__pycache__", ".pytest_cache", ".ruff_cache", ".venv", "audit", "reports", "dist"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
+EXCLUDED_NAMES = {"exam_demo.py", "EXAM_DEMO.md"}
 
 
 def allowed(path: Path) -> bool:
+    if path.name in EXCLUDED_NAMES:
+        return False
     if any(part in EXCLUDED_PARTS for part in path.parts):
         return False
     if path.suffix in EXCLUDED_SUFFIXES:
