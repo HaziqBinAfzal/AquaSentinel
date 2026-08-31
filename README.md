@@ -211,16 +211,16 @@ This is analysis architecture, not a control architecture. No module writes to f
 ## Main files
 
 ```text
-AquaSentinel.bat             Windows setup, verification and interface menu
-aquasentinel/__main__.py     CLI routing
-aquasentinel/ingestion.py    File parsing, normalization and dataset analysis
+AquaSentinel.bat              Windows setup, verification and interface menu
+aquasentinel/__main__.py      CLI routing
+aquasentinel/ingestion.py     File parsing, normalization and dataset analysis
 aquasentinel/file_analysis.py Terminal presentation
-aquasentinel/webui.py        Localhost browser workstation
-aquasentinel/doctor.py       Environment / safety checks
-aquasentinel/compliance.py   Educational assurance context
-tests/test_ingestion.py      File-ingestion verification
-tests/test_webui.py          Browser-interface verification
-.github/workflows/ci.yml     Linux and Windows CI
+aquasentinel/webui.py         Localhost browser workstation
+aquasentinel/doctor.py        Environment / safety checks
+aquasentinel/compliance.py    Educational assurance context
+tests/test_ingestion.py       File-ingestion verification
+tests/test_webui.py           Browser-interface verification
+.github/workflows/ci.yml      Linux and Windows CI
 ```
 
 The repository still contains supporting analytical modules developed during the project, but the v1.0.0 user workflow is file-driven. No preloaded incident is started by the application, and legacy demo helpers are excluded from the Windows user package.
@@ -229,21 +229,7 @@ The repository still contains supporting analytical modules developed during the
 
 ## DevSecOps verification
 
-CI checks the same release branch used to build the Windows package. It performs:
-
-```text
-editable installation
-Ruff
-Bandit
-Pytest
-environment doctor
-architecture check
-file-analysis self-check
-browser-analysis self-check
-real supplied-file CLI analysis
-Windows ZIP build
-ZIP content verification
-```
+CI checks the same release branch used to build the Windows package. It performs editable installation, Ruff, Bandit, Pytest, the environment doctor, architecture validation, file-analysis self-checks, a real supplied-file CLI analysis, the Windows ZIP build and ZIP-content verification.
 
 A separate `windows-latest` job executes:
 
