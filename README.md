@@ -49,7 +49,7 @@ The central design principle is simple: **AI remains advisory**. Water quality, 
 
 ## Localhost Operations Dashboard
 
-AquaSentinel now includes a full browser UI served entirely from the local machine.
+AquaSentinel includes a full browser UI served entirely from the local machine.
 
 ```text
 http://127.0.0.1:8765/
@@ -385,7 +385,7 @@ AquaSentinel/
 
 The Linux CI job performs editable installation, Ruff static checks, Bandit defensive security scanning, Pytest, environment-doctor validation, architecture/scenario/live/**web-dashboard**/incident/exam-demo smoke tests, exam-report generation, the final Windows ZIP build and ZIP-content integrity verification.
 
-A separate `windows-latest` job executes the actual `AquaSentinel.bat --check-only` path end-to-end. That Windows launcher path now also validates the web-dashboard state builder before it is allowed to report success.
+A separate `windows-latest` job executes the actual `AquaSentinel.bat --check-only` path end-to-end. That Windows launcher path also validates the web-dashboard state builder before it is allowed to report success.
 
 The generated ZIP is checked to ensure that `aquasentinel/webui.py` and its tests are actually included in the examiner package.
 
