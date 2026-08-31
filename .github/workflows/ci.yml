@@ -15,7 +15,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install --upgrade pip
-      - run: pip install -r requirements.txt pytest
+      - run: pip install -e . pytest
       - run: pytest -q
       - run: python -m aquasentinel architecture
       - run: python -m aquasentinel run --scenario dosing_event --samples 7
+      - run: python -m aquasentinel report --output reports/ci_exam_report.json
