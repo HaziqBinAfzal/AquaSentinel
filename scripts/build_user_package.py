@@ -15,8 +15,6 @@ ROOT_FILES = [
     "requirements.txt",
     "install.bat",
     "install.sh",
-    "run_exam_demo.bat",
-    "run_exam_demo.sh",
     "CHANGELOG.md",
 ]
 
