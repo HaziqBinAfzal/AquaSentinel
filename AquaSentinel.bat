@@ -94,6 +94,8 @@ if errorlevel 1 goto :fatal
 if errorlevel 1 goto :fatal
 "%VENV_PY%" -m aquasentinel incident --scenario dosing_event --step 8 >nul
 if errorlevel 1 goto :fatal
+"%VENV_PY%" -m aquasentinel web --check-only >nul
+if errorlevel 1 goto :fatal
 "%VENV_PY%" -m aquasentinel report --output reports\launcher_preflight_report.json >nul
 if errorlevel 1 goto :fatal
 
@@ -108,23 +110,22 @@ if "%CHECK_ONLY%"=="1" (
     exit /b 0
 )
 
-echo AquaSentinel is ready. Starting the guided Topic 133 demonstration...
-echo Press Ctrl+C at any time if you need to stop the demo.
+echo Starting AquaSentinel Local Operations Dashboard...
 echo.
-timeout /t 2 /nobreak >nul
-
-"%VENV_PY%" -m aquasentinel exam-demo
-if errorlevel 1 goto :fatal
-
+echo Browser URL: http://127.0.0.1:8765/
+echo The browser should open automatically.
+echo Keep this terminal window open while using the dashboard.
+echo Press Ctrl+C here to stop the localhost server.
 echo.
-echo ================================================================
-echo                       DEMO COMPLETE
-echo ================================================================
+echo Optional terminal exam demo command:
+echo   .venv\Scripts\python.exe -m aquasentinel exam-demo
 echo.
-echo Optional next command for the live industrial SOC dashboard:
+echo Optional terminal SOC dashboard command:
 echo   .venv\Scripts\python.exe -m aquasentinel live --scenario dosing_event --samples 40 --refresh-rate 4 --fullscreen
 echo.
-pause
+
+"%VENV_PY%" -m aquasentinel web --port 8765
+if errorlevel 1 goto :fatal
 exit /b 0
 
 :fatal
