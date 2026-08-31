@@ -13,6 +13,7 @@ from .doctor import healthy, run_checks
 from .live import run_live
 from .ml import QualityMLModel
 from .optimizer import optimize
+from .presenter import incident_brief
 from .reporting import generate_exam_report
 from .scenarios import SCENARIOS
 from .security import correlate, events_for
@@ -108,6 +109,11 @@ def main() -> None:
     live.add_argument("--refresh-rate", type=float, default=4.0)
     live.add_argument("--seed", type=int, default=133)
 
+    incident = sub.add_parser("incident", help="Show an examiner-friendly correlated incident brief")
+    incident.add_argument("--scenario", choices=SCENARIOS, default="dosing_event")
+    incident.add_argument("--step", type=int, default=8)
+    incident.add_argument("--seed", type=int, default=133)
+
     sub.add_parser("demo")
     sub.add_parser("architecture")
     sub.add_parser("compliance")
@@ -122,6 +128,8 @@ def main() -> None:
         run_scenario(args.scenario, args.samples, args.delay, not args.no_ml, args.seed)
     elif args.cmd == "live":
         run_live(args.scenario, args.samples, args.refresh_rate, args.seed)
+    elif args.cmd == "incident":
+        incident_brief(args.scenario, args.step, args.seed)
     elif args.cmd == "architecture":
         architecture()
     elif args.cmd == "compliance":
