@@ -21,12 +21,16 @@ jobs:
       - run: pytest -q
       - run: python -m aquasentinel doctor
       - run: python -m aquasentinel architecture
-      - run: python -m aquasentinel run --scenario dosing_event --samples 7
-      - run: python -m aquasentinel live --scenario optimization --samples 1 --refresh-rate 10
+      - run: python -m aquasentinel analyze --check-only
       - run: python -m aquasentinel web --check-only
-      - run: python -m aquasentinel incident --scenario dosing_event --step 8
-      - run: python -m aquasentinel exam-demo --pause 0
-      - run: python -m aquasentinel report --output reports/ci_exam_report.json
+      - name: Analyze a supplied file through the real CLI
+        run: |
+          cat > /tmp/aquasentinel-ci.csv <<'CSV'
+          timestamp,severity,ph,conductivity,turbidity,ro_pressure,flow_rate,membrane_health
+          2026-01-01T00:00:00Z,info,7.2,420,0.3,58,102,92
+          2026-01-01T00:01:00Z,warning,6.2,710,2.1,61,97,69
+          CSV
+          python -m aquasentinel analyze /tmp/aquasentinel-ci.csv
       - run: python scripts/build_user_package.py
       - name: Verify user package contents
         run: |
@@ -41,10 +45,12 @@ jobs:
               root + 'START_HERE.txt',
               root + 'pyproject.toml',
               root + 'aquasentinel/__main__.py',
+              root + 'aquasentinel/ingestion.py',
+              root + 'aquasentinel/file_analysis.py',
               root + 'aquasentinel/webui.py',
               root + 'tests/test_version.py',
+              root + 'tests/test_ingestion.py',
               root + 'tests/test_webui.py',
-              root + 'assets/aquasentinel-terminal.svg',
               root + 'docs/PROJECT_GUIDE.md',
           }
           with ZipFile(archive) as zf:
