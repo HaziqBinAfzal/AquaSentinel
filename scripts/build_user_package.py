@@ -20,7 +20,10 @@ ROOT_FILES = [
     "CHANGELOG.md",
 ]
 
-INCLUDE_DIRS = ["aquasentinel", "docs"]
+# Tests are intentionally included because AquaSentinel.bat verifies the
+# distributed copy before launching. Assets are included so the examiner-facing
+# README renders exactly as it does in the repository.
+INCLUDE_DIRS = ["aquasentinel", "tests", "docs", "assets"]
 EXCLUDED_PARTS = {"__pycache__", ".pytest_cache", ".ruff_cache", ".venv", "audit", "reports", "dist"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
 
