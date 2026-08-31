@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
+import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Timer
 from urllib.parse import urlparse
-import webbrowser
 
 from .ingestion import analyze_content
 
@@ -19,35 +19,100 @@ HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
 const $=x=>document.getElementById(x),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const cls=v=>v>=70?'bad':v>=35?'warn':'good';function spark(name,v){let a=v.series||[];if(a.length<2)return'';let lo=Math.min(...a),hi=Math.max(...a),r=hi-lo||1,pts=a.map((x,i)=>`${i/(a.length-1)*100},${82-(x-lo)/r*70}`).join(' ');return `<div class="chart"><h4>${esc(name.replaceAll('_',' '))}</h4><svg viewBox="0 0 100 90" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="#315b75" stroke-width="1.4" vector-effect="non-scaling-stroke"/></svg><span class="hint">min ${v.min} · avg ${v.avg} · max ${v.max}</span></div>`}function render(d){$('empty').style.display='none';$('dash').style.display='block';let s=d.summary,m=d.ml;$('decision').textContent=s.decision;$('decision').className=s.decision==='REVIEW'?'warn':'good';$('risk').textContent=s.risk_score+'/100';$('risk').className=cls(s.risk_score);$('records').textContent=d.source.records;$('errors').textContent=s.critical+' / '+s.errors;$('errors').className=s.critical+s.errors?'bad':'good';$('flags').textContent=s.review_flags;$('flags').className=s.review_flags?'warn':'good';$('mlcount').textContent=m.state==='ANALYZED'?m.anomaly_count:'N/A';$('objectives').innerHTML=d.objectives.map(o=>`<article class="objective"><h3>${esc(o.title)}</h3><span class="tag">${esc(o.status)}</span><p>${esc(o.detail)}</p></article>`).join('');$('metrics').innerHTML=Object.entries(d.metrics).map(([k,v])=>`<tr><td>${esc(k.replaceAll('_',' '))}</td><td class="num">${v.count}</td><td class="num">${v.min}</td><td class="num">${v.avg}</td><td class="num">${v.max}</td><td class="num">${v.last}</td></tr>`).join('')||'<tr><td colspan="6">Not available in source.</td></tr>';$('qualityflags').innerHTML=d.review_flags.length?d.review_flags.map(f=>`<div class="flag"><b>${esc(f.field.replaceAll('_',' '))}</b>: ${f.outside_band}/${f.count} values outside the illustrative classroom band.</div>`).join(''):'<p class="good">No configured classroom-band exceptions found.</p>';$('charts').innerHTML=Object.entries(d.metrics).filter(([k])=>['ph','conductivity','turbidity','residual_chlorine','ro_pressure','flow_rate','energy_kwh','membrane_health'].includes(k)).map(([k,v])=>spark(k,v)).join('')||'<span class="hint">No trendable configured telemetry in source.</span>';$('maintenance').innerHTML=`<table><tbody><tr><th>Membrane fouling review</th><td>${d.maintenance.fouling_review?'<b class="warn">INDICATED</b>':'Not indicated by configured checks'}</td></tr><tr><th>RO pressure</th><td>${d.metrics.ro_pressure?`max ${d.metrics.ro_pressure.max}`:'Not available in source'}</td></tr><tr><th>Flow rate</th><td>${d.metrics.flow_rate?`min ${d.metrics.flow_rate.min}`:'Not available in source'}</td></tr><tr><th>Membrane health</th><td>${d.metrics.membrane_health?`min ${d.metrics.membrane_health.min}`:'Not available in source'}</td></tr></tbody></table>`;let inds=Object.entries(d.indicators);$('security').innerHTML=inds.length?`<table><thead><tr><th>Evidence term</th><th>Records containing term</th></tr></thead><tbody>${inds.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join('')}</tbody></table><p class="hint">Counts are record matches, not unique cyber incidents.</p>`:'No configured OT/security evidence terms found.';$('ml').innerHTML=`<b>${esc(m.state)}</b><p>${esc(m.detail)}</p><p><b>Flagged records:</b> ${m.anomaly_indexes?.length?esc(m.anomaly_indexes.join(', ')):'none'}</p><p class="hint">Features: ${esc((m.features||[]).join(', ')||'none')}. Model output is advisory and requires human interpretation.</p>`;let cp=d.cyber_physical;$('correlation').innerHTML=`<table><tbody><tr><th>Correlation state</th><td><b class="${cp.correlated?'warn':'good'}">${cp.correlated?'CORRELATED REVIEW':'NO CORRELATION ESTABLISHED'}</b></td></tr><tr><th>Security keyword-record matches</th><td>${cp.security_matches}</td></tr><tr><th>Quality exception values</th><td>${cp.quality_exception_values}</td></tr><tr><th>Response principle</th><td>Validate evidence → assess public-health/process impact → human-led containment/recovery → preserve audit evidence.</td></tr></tbody></table>`;$('energy').innerHTML=`<table><tbody><tr><th>Energy telemetry</th><td>${d.metrics.energy_kwh?`avg ${d.metrics.energy_kwh.avg} · max ${d.metrics.energy_kwh.max}`:'Not available in source'}</td></tr><tr><th>Energy review</th><td>${esc(d.maintenance.energy_state)}</td></tr><tr><th>Optimization authority</th><td>Advisory only — no automatic process writes.</td></tr></tbody></table>`;$('source').innerHTML=`<table><tbody><tr><th>File</th><td class="mono">${esc(d.source.filename)}</td></tr><tr><th>Format</th><td>${esc(d.source.format.toUpperCase())}</td></tr><tr><th>Records</th><td>${d.source.records}</td></tr><tr><th>Fields</th><td>${d.source.fields.length}</td></tr></tbody></table><div class="fields">${esc(d.source.fields.join(' · '))}</div>`;let ev=d.security_events;$('events').innerHTML=ev.length?`<table><thead><tr><th>#</th><th>Timestamp</th><th>Severity</th><th>Source</th><th>Event</th><th>Security evidence</th><th>Message</th></tr></thead><tbody>${ev.map(x=>`<tr><td>${x.index}</td><td class="mono">${esc(x.timestamp)}</td><td>${esc(x.severity)}</td><td>${esc(x.source)}</td><td>${esc(x.event)}</td><td>${esc(x.evidence)}</td><td>${esc(x.message)}</td></tr>`).join('')}</tbody></table>`:'No security/review events identified.';let reasons=[];if(s.critical||s.errors)reasons.push(`${s.critical} critical and ${s.errors} error records`);if(d.review_flags.length)reasons.push(`${d.review_flags.length} water/process fields with review exceptions`);if(m.anomaly_count)reasons.push(`${m.anomaly_count} records flagged by IsolationForest`);if(cp.correlated)reasons.push('security evidence coincides with process/quality exceptions');$('summary').innerHTML=`<b>Disposition: ${esc(s.decision)}</b><br>${reasons.length?'Review is driven by '+esc(reasons.join(', '))+'.':'No configured evidence currently requires escalation.'}<br><br>The result supports human decision-making for water-quality assurance, OT threat review, predictive maintenance and resource management; it does not issue plant-control commands.`;let rows=d.recent_records,keys=[];rows.forEach(x=>Object.keys(x.record).forEach(k=>{if(!keys.includes(k)&&keys.length<10)keys.push(k)}));$('recent').innerHTML=rows.length?`<table><thead><tr><th>#</th>${keys.map(k=>`<th>${esc(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr><td>${x.index}</td>${keys.map(k=>`<td class="mono">${esc(x.record[k]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'No records available.'}$('analyze').onclick=async()=>{let f=$('file').files[0];if(!f){$('error').textContent='Select a supported file first.';$('error').style.display='block';return}if(f.size>8*1024*1024){$('error').textContent='Selected file exceeds 8 MB.';$('error').style.display='block';return}let b=$('analyze');b.disabled=true;b.textContent='Analyzing…';try{let r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:f.name,content:await f.text()})}),d=await r.json();if(!r.ok)throw new Error(d.error||'Analysis failed');$('error').style.display='none';render(d)}catch(e){$('error').textContent=e.message;$('error').style.display='block'}finally{b.disabled=false;b.textContent='Analyze evidence'}};
 </script></body></html>'''
 
+
 class _Handler(BaseHTTPRequestHandler):
-    def _send(self,status:int,content_type:str,body:bytes)->None:
-        self.send_response(status);self.send_header("Content-Type",content_type);self.send_header("Content-Length",str(len(body)));self.send_header("Cache-Control","no-store");self.send_header("X-Content-Type-Options","nosniff");self.send_header("X-Frame-Options","DENY");self.send_header("Content-Security-Policy","default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'");self.end_headers();self.wfile.write(body)
-    def do_GET(self)->None:  # noqa: N802
-        path=urlparse(self.path).path
-        if path=="/":self._send(200,"text/html; charset=utf-8",HTML.encode("utf-8"));return
-        if path=="/api/health":self._send(200,"application/json; charset=utf-8",json.dumps({"ok":True,"mode":"local-file-analysis","version":"1.0.0"}).encode());return
-        self._send(404,"text/plain; charset=utf-8",b"Not found")
-    def do_POST(self)->None:  # noqa: N802
-        if urlparse(self.path).path!="/api/analyze":self._send(404,"text/plain; charset=utf-8",b"Not found");return
+    def _send(self, status: int, content_type: str, body: bytes) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; "
+            "connect-src 'self'; frame-ancestors 'none'",
+        )
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self) -> None:  # noqa: N802
+        path = urlparse(self.path).path
+        if path == "/":
+            self._send(200, "text/html; charset=utf-8", HTML.encode("utf-8"))
+            return
+        if path == "/api/health":
+            body = json.dumps(
+                {"ok": True, "mode": "local-file-analysis", "version": "1.0.0"}
+            ).encode()
+            self._send(200, "application/json; charset=utf-8", body)
+            return
+        self._send(404, "text/plain; charset=utf-8", b"Not found")
+
+    def do_POST(self) -> None:  # noqa: N802
+        if urlparse(self.path).path != "/api/analyze":
+            self._send(404, "text/plain; charset=utf-8", b"Not found")
+            return
+
         try:
-            length=int(self.headers.get("Content-Length","0"))
-            if length<=0 or length>MAX_BODY_BYTES:raise ValueError("Invalid or oversized request")
-            payload=json.loads(self.rfile.read(length));filename=Path(str(payload.get("filename",""))).name;content=payload.get("content","")
-            if not filename or not isinstance(content,str):raise ValueError("filename and text content are required")
-            self._send(200,"application/json; charset=utf-8",json.dumps(analyze_content(filename,content),ensure_ascii=False).encode("utf-8"))
-        except (ValueError,json.JSONDecodeError) as exc:self._send(400,"application/json; charset=utf-8",json.dumps({"error":str(exc)}).encode())
-    def log_message(self,format:str,*args:object)->None:return
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0 or length > MAX_BODY_BYTES:
+                raise ValueError("Invalid or oversized request")
 
-def run_web_ui(host:str="127.0.0.1",port:int=8765,open_browser:bool=True)->None:
-    if host not in {"127.0.0.1","localhost"}:raise ValueError("AquaSentinel web UI may only bind to localhost")
-    server=ThreadingHTTPServer((host,port),_Handler);url=f"http://127.0.0.1:{port}/"
-    if open_browser:Timer(0.7,lambda:webbrowser.open(url)).start()
-    print(f"AquaSentinel local analysis workstation: {url}");print("Press Ctrl+C to stop.")
-    try:server.serve_forever()
-    except KeyboardInterrupt:pass
-    finally:server.server_close()
+            payload = json.loads(self.rfile.read(length))
+            filename = Path(str(payload.get("filename", ""))).name
+            content = payload.get("content", "")
+            if not filename or not isinstance(content, str):
+                raise ValueError("filename and text content are required")
 
-def self_check()->dict[str,object]:
-    result=analyze_content("check.csv","timestamp,severity,ph,turbidity,energy_kwh,membrane_health\n2026-01-01T00:00:00Z,info,7.2,0.3,390,92\n2026-01-01T00:01:00Z,warning,6.1,2.2,430,65\n")
-    if result["source"]["records"]!=2 or "Topic 133" not in HTML or "objectives" not in result:raise RuntimeError("web UI self-check failed")
-    return {"ok":True,"records":2,"mode":"local-file-analysis","topic":"133"}
+            result = analyze_content(filename, content)
+            body = json.dumps(result, ensure_ascii=False).encode("utf-8")
+            self._send(200, "application/json; charset=utf-8", body)
+        except (ValueError, json.JSONDecodeError) as exc:
+            body = json.dumps({"error": str(exc)}).encode()
+            self._send(400, "application/json; charset=utf-8", body)
+
+    def log_message(self, format: str, *args: object) -> None:
+        return
+
+
+def run_web_ui(
+    host: str = "127.0.0.1", port: int = 8765, open_browser: bool = True
+) -> None:
+    if host not in {"127.0.0.1", "localhost"}:
+        raise ValueError("AquaSentinel web UI may only bind to localhost")
+
+    server = ThreadingHTTPServer((host, port), _Handler)
+    url = f"http://127.0.0.1:{port}/"
+    if open_browser:
+        Timer(0.7, lambda: webbrowser.open(url)).start()
+
+    print(f"AquaSentinel local analysis workstation: {url}")
+    print("Press Ctrl+C to stop.")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
+def self_check() -> dict[str, object]:
+    result = analyze_content(
+        "check.csv",
+        "timestamp,severity,ph,turbidity,energy_kwh,membrane_health\n"
+        "2026-01-01T00:00:00Z,info,7.2,0.3,390,92\n"
+        "2026-01-01T00:01:00Z,warning,6.1,2.2,430,65\n",
+    )
+    if (
+        result["source"]["records"] != 2
+        or "Topic 133" not in HTML
+        or "objectives" not in result
+    ):
+        raise RuntimeError("web UI self-check failed")
+    return {
+        "ok": True,
+        "records": 2,
+        "mode": "local-file-analysis",
+        "topic": "133",
+    }
