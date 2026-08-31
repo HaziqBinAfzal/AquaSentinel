@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aquasentinel-ai"
-version = "0.3.0"
+version = "1.0.0rc1"
 description = "Safe simulated smart water and desalination infrastructure security platform"
 readme = "README.md"
 requires-python = ">=3.10"
