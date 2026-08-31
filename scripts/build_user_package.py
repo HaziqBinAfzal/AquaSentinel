@@ -20,9 +20,9 @@ ROOT_FILES = [
     "CHANGELOG.md",
 ]
 
-# Tests are intentionally included because AquaSentinel.bat verifies the
-# distributed copy before launching. Assets are included so the examiner-facing
-# README renders exactly as it does in the repository.
+# Tests are included because AquaSentinel.bat verifies the distributed copy
+# before opening either interface. Documentation is kept with the package so
+# the examiner can inspect the design without a separate download.
 INCLUDE_DIRS = ["aquasentinel", "tests", "docs", "assets"]
 EXCLUDED_PARTS = {"__pycache__", ".pytest_cache", ".ruff_cache", ".venv", "audit", "reports", "dist"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
@@ -63,16 +63,16 @@ def main() -> None:
         quick_start = (
             "AQUASENTINEL AI v1.0.0 - QUICK START\n"
             "====================================\n\n"
-            "Windows:\n"
             "1. Extract this ZIP to a normal folder.\n"
             "2. Double-click AquaSentinel.bat.\n"
-            "3. The launcher creates the environment, installs dependencies, runs all verification checks, and then opens the local browser dashboard.\n"
-            "4. Dashboard address: http://127.0.0.1:8765/\n"
-            "5. Keep the launcher terminal open while using the dashboard; press Ctrl+C there to stop the local server.\n\n"
-            "Terminal exam mode is still available with: .venv\\Scripts\\python.exe -m aquasentinel exam-demo\n\n"
-            "Requirement: Python 3.10 or newer must be installed and available as 'py' or 'python'.\n\n"
+            "3. After verification choose one interface:\n"
+            "   [1] Browser - choose a local file in the localhost page.\n"
+            "   [2] Terminal - paste the path of a local file.\n\n"
+            "Supported input: .log, .txt, .csv, .json and .jsonl (up to 8 MB).\n"
+            "No dataset or incident demo is preloaded. AquaSentinel analyzes the file you provide.\n\n"
+            "Requirement: Python 3.10 or newer must be available as 'py' or 'python'.\n\n"
             "SAFETY BOUNDARY\n"
-            "This is a synthetic, defensive, read-only classroom simulation. The browser UI is localhost-only and does not connect to or control real PLC, SCADA, dosing, water-treatment or public-health infrastructure.\n"
+            "AquaSentinel is a local defensive analysis project. It does not connect to or control real PLC, SCADA, dosing, water-treatment or public-health infrastructure.\n"
         )
         archive.writestr(f"{PACKAGE_NAME}/START_HERE.txt", quick_start)
 
