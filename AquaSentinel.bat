@@ -13,7 +13,7 @@ if /I "%~1"=="--check-only" set "CHECK_ONLY=1"
 
 cls
 echo ================================================================
-echo                  AQUASENTINEL AI v1.0.0-rc1
+echo                    AQUASENTINEL AI v1.0.0
 echo        Smart Water ^& Desalination Security Platform
 echo ================================================================
 echo.
