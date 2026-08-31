@@ -5,7 +5,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
-PACKAGE_NAME = "AquaSentinel-v1.0.0rc1-Windows"
+PACKAGE_NAME = "AquaSentinel-v1.0.0-Windows"
 OUTPUT = DIST / f"{PACKAGE_NAME}.zip"
 
 ROOT_FILES = [
@@ -61,8 +61,8 @@ def main() -> None:
                     add_file(archive, path)
 
         quick_start = (
-            "AQUASENTINEL AI - QUICK START\n"
-            "=============================\n\n"
+            "AQUASENTINEL AI v1.0.0 - QUICK START\n"
+            "====================================\n\n"
             "Windows:\n"
             "1. Extract this ZIP to a normal folder.\n"
             "2. Double-click AquaSentinel.bat.\n"
