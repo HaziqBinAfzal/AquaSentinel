@@ -8,22 +8,46 @@ from .analytics import analyze
 from .audit import record
 from .compliance import report
 from .dashboard import architecture, render
+from .ml import QualityMLModel
 from .scenarios import SCENARIOS
 from .telemetry import sample
 
 console = Console()
+_MODEL: QualityMLModel | None = None
 
 
-def run_scenario(name: str, samples: int, delay: float = 0.0) -> None:
+def get_model() -> QualityMLModel:
+    global _MODEL
+    if _MODEL is None:
+        console.print("[dim]Training synthetic baseline anomaly model...[/dim]")
+        _MODEL = QualityMLModel.train_default()
+    return _MODEL
+
+
+def run_scenario(name: str, samples: int, delay: float = 0.0, use_ml: bool = True) -> None:
     if name not in SCENARIOS:
         raise SystemExit(f"Unknown scenario: {name}")
     console.rule(f"AquaSentinel | {name}")
     console.print(SCENARIOS[name])
+    model = get_model() if use_ml else None
     for i in range(samples):
         t = sample(name, i)
         result = analyze(t)
-        render(t, result, name)
-        record("telemetry_analysis", {"scenario": name, "telemetry": t.dict(), "analysis": result})
+        ml_result = model.score(t) if model else None
+        if ml_result:
+            result["priority"] = max(result["priority"], ml_result["ml_priority"])
+            if ml_result["ml_state"] == "ANOMALOUS":
+                result["human_review_required"] = True
+        render(t, result, name, ml_result)
+        record(
+            "telemetry_analysis",
+            {
+                "scenario": name,
+                "telemetry": t.dict(),
+                "analysis": result,
+                "ml": ml_result,
+            },
+        )
         if delay:
             time.sleep(delay)
 
@@ -35,6 +59,7 @@ def demo() -> None:
     for name in ["normal", "sensor_anomaly", "quality_anomaly", "dosing_event", "fouling", "optimization"]:
         run_scenario(name, 7)
     console.print("\n[bold]Incident reasoning:[/bold] detect → validate → correlate → assess consequence → contain safely → verify quality → recover → preserve evidence")
+    console.print("\n[bold]AI guardrail:[/bold] ML prioritizes evidence; it never overrides quality, engineering, public-health or human authority.")
     console.print("\n" + report())
 
 
@@ -45,16 +70,23 @@ def main() -> None:
     run.add_argument("--scenario", choices=SCENARIOS, default="normal")
     run.add_argument("--samples", type=int, default=10)
     run.add_argument("--delay", type=float, default=0.0)
+    run.add_argument("--no-ml", action="store_true", help="Use only deterministic classroom checks")
     sub.add_parser("demo")
     sub.add_parser("architecture")
     sub.add_parser("compliance")
+    sub.add_parser("ml-check")
     args = p.parse_args()
     if args.cmd == "run":
-        run_scenario(args.scenario, args.samples, args.delay)
+        run_scenario(args.scenario, args.samples, args.delay, not args.no_ml)
     elif args.cmd == "architecture":
         architecture()
     elif args.cmd == "compliance":
         console.print(report())
+    elif args.cmd == "ml-check":
+        model = get_model()
+        for scenario in SCENARIOS:
+            t = sample(scenario, 8)
+            console.print(f"{scenario:16} {model.score(t)}")
     else:
         demo()
 
