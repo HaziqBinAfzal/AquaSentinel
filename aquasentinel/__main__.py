@@ -19,6 +19,7 @@ from .reporting import generate_exam_report
 from .scenarios import SCENARIOS
 from .security import correlate, events_for
 from .telemetry import sample
+from .webui import run_web
 
 console = Console()
 _MODEL: QualityMLModel | None = None
@@ -111,6 +112,11 @@ def main() -> None:
     live.add_argument("--seed", type=int, default=133)
     live.add_argument("--fullscreen", action="store_true", help="Use terminal alternate-screen mode for an app-like exam demo")
 
+    web = sub.add_parser("web", help="Run the read-only AquaSentinel browser dashboard on localhost")
+    web.add_argument("--port", type=int, default=8765, help="Localhost port; default 8765")
+    web.add_argument("--no-browser", action="store_true", help="Do not open the browser automatically")
+    web.add_argument("--check-only", action="store_true", help="Validate web dashboard data without starting a server")
+
     incident = sub.add_parser("incident", help="Show an examiner-friendly correlated incident brief")
     incident.add_argument("--scenario", choices=SCENARIOS, default="dosing_event")
     incident.add_argument("--step", type=int, default=8)
@@ -133,6 +139,8 @@ def main() -> None:
         run_scenario(args.scenario, args.samples, args.delay, not args.no_ml, args.seed)
     elif args.cmd == "live":
         run_live(args.scenario, args.samples, args.refresh_rate, args.seed, args.fullscreen)
+    elif args.cmd == "web":
+        run_web(args.port, not args.no_browser, args.check_only)
     elif args.cmd == "incident":
         incident_brief(args.scenario, args.step, args.seed)
     elif args.cmd == "exam-demo":
