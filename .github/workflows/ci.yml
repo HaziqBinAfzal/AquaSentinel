@@ -32,8 +32,8 @@ jobs:
           python - <<'PY'
           from zipfile import ZipFile
 
-          archive = 'dist/AquaSentinel-v1.0.0rc1-Windows.zip'
-          root = 'AquaSentinel-v1.0.0rc1-Windows/'
+          archive = 'dist/AquaSentinel-v1.0.0-Windows.zip'
+          root = 'AquaSentinel-v1.0.0-Windows/'
           required = {
               root + 'AquaSentinel.bat',
               root + 'README.md',
@@ -53,8 +53,8 @@ jobs:
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: AquaSentinel-v1.0.0rc1-Windows
-          path: dist/AquaSentinel-v1.0.0rc1-Windows.zip
+          name: AquaSentinel-v1.0.0-Windows
+          path: dist/AquaSentinel-v1.0.0-Windows.zip
           if-no-files-found: error
 
   windows-launcher:
