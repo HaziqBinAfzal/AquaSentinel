@@ -1,73 +1,18 @@
 from __future__ import annotations
 
 import argparse
-import time
+
 from rich.console import Console
 from rich.table import Table
 
-from .analytics import analyze
-from .audit import record
 from .compliance import report
-from .dashboard import architecture, render
+from .dashboard import architecture
 from .doctor import healthy, run_checks
-from .exam_demo import run_exam_demo
-from .live import run_live
-from .ml import QualityMLModel
-from .optimizer import optimize
-from .presenter import incident_brief
-from .reporting import generate_exam_report
-from .scenarios import SCENARIOS
-from .security import correlate, events_for
-from .telemetry import sample
+from .file_analysis import analyze_file, render_file_analysis
+from .ingestion import analyze_content
 from .webui import run_web
 
 console = Console()
-_MODEL: QualityMLModel | None = None
-
-
-def get_model() -> QualityMLModel:
-    global _MODEL
-    if _MODEL is None:
-        console.print("[dim]Training synthetic baseline anomaly model...[/dim]")
-        _MODEL = QualityMLModel.train_default()
-    return _MODEL
-
-
-def run_scenario(name: str, samples: int, delay: float = 0.0, use_ml: bool = True, seed: int = 133) -> None:
-    if name not in SCENARIOS:
-        raise SystemExit(f"Unknown scenario: {name}")
-    console.rule(f"AquaSentinel | {name}")
-    console.print(SCENARIOS[name])
-    model = get_model() if use_ml else None
-    for i in range(samples):
-        t = sample(name, i, seed=seed)
-        result = analyze(t)
-        ml_result = model.score(t) if model else None
-        security_events = events_for(t.cyber_event)
-        correlation = correlate(security_events, result["quality_flags"])
-        if ml_result:
-            result["priority"] = max(result["priority"], ml_result["ml_priority"])
-            if ml_result["ml_state"] == "ANOMALOUS":
-                result["human_review_required"] = True
-        result["priority"] = max(result["priority"], correlation["correlation_score"])
-        if correlation["correlation_score"] >= 70:
-            result["human_review_required"] = True
-        optimization = optimize(t, result).dict()
-        render(t, result, name, ml_result, correlation, optimization)
-        record(
-            "telemetry_analysis",
-            {
-                "scenario": name,
-                "telemetry": t.dict(),
-                "analysis": result,
-                "ml": ml_result,
-                "security_events": [event.dict() for event in security_events],
-                "correlation": correlation,
-                "optimization": optimization,
-            },
-        )
-        if delay:
-            time.sleep(delay)
 
 
 def doctor() -> None:
@@ -83,84 +28,58 @@ def doctor() -> None:
         raise SystemExit(1)
 
 
-def demo() -> None:
-    console.print("[bold]AquaSentinel AI — Topic 133 Safe Exam Demonstration[/bold]")
-    console.print("Synthetic defensive lab only; no real plant or SCADA connection.\n")
-    architecture()
-    for name in ["normal", "sensor_anomaly", "quality_anomaly", "dosing_event", "fouling", "optimization"]:
-        run_scenario(name, 7)
-    console.print("\n[bold]Incident reasoning:[/bold] detect → validate → correlate → assess consequence → contain safely → verify quality → recover → preserve evidence")
-    console.print("\n[bold]AI guardrail:[/bold] ML and optimization are advisory; they never override quality, engineering, public-health or human authority.")
-    console.print("\n" + report())
+def _analysis_check() -> None:
+    probe = (
+        "timestamp,severity,ph,conductivity,turbidity,ro_pressure,flow_rate,membrane_health\n"
+        "2026-01-01T00:00:00Z,info,7.2,420,0.3,58,102,92\n"
+        "2026-01-01T00:01:00Z,warning,7.3,425,0.4,59,101,91\n"
+    )
+    result = analyze_content("self-check.csv", probe)
+    if result["source"]["records"] != 2 or "ph" not in result["metrics"]:
+        raise SystemExit("File-analysis self-check failed")
+    console.print("[green]Local file-analysis check passed[/green]")
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="AquaSentinel AI safe water/desalination security simulation")
-    sub = p.add_subparsers(dest="cmd")
+    parser = argparse.ArgumentParser(
+        description="AquaSentinel AI local defensive log and water/process data analyzer"
+    )
+    sub = parser.add_subparsers(dest="cmd")
 
-    run = sub.add_parser("run", help="Run a scenario as discrete terminal snapshots")
-    run.add_argument("--scenario", choices=SCENARIOS, default="normal")
-    run.add_argument("--samples", type=int, default=10)
-    run.add_argument("--delay", type=float, default=0.0)
-    run.add_argument("--seed", type=int, default=133)
-    run.add_argument("--no-ml", action="store_true", help="Use only deterministic classroom checks")
-
-    live = sub.add_parser("live", help="Run the industrial low-lag SOC terminal dashboard")
-    live.add_argument("--scenario", choices=SCENARIOS, default="normal")
-    live.add_argument("--samples", type=int, default=30)
-    live.add_argument("--refresh-rate", type=float, default=4.0)
-    live.add_argument("--seed", type=int, default=133)
-    live.add_argument("--fullscreen", action="store_true", help="Use terminal alternate-screen mode for an app-like exam demo")
-
-    web = sub.add_parser("web", help="Run the read-only AquaSentinel browser dashboard on localhost")
+    web = sub.add_parser("web", help="Open the local browser analysis workstation")
     web.add_argument("--port", type=int, default=8765, help="Localhost port; default 8765")
     web.add_argument("--no-browser", action="store_true", help="Do not open the browser automatically")
-    web.add_argument("--check-only", action="store_true", help="Validate web dashboard data without starting a server")
+    web.add_argument("--check-only", action="store_true", help="Validate web analysis without starting a server")
 
-    incident = sub.add_parser("incident", help="Show an examiner-friendly correlated incident brief")
-    incident.add_argument("--scenario", choices=SCENARIOS, default="dosing_event")
-    incident.add_argument("--step", type=int, default=8)
-    incident.add_argument("--seed", type=int, default=133)
+    analyze = sub.add_parser("analyze", help="Analyze a local .log, .txt, .csv, .json or .jsonl file")
+    analyze.add_argument("file", nargs="?", help="Path to the local file")
+    analyze.add_argument("--check-only", action="store_true", help="Run a built-in parser self-check for CI/setup")
 
-    exam_demo = sub.add_parser("exam-demo", help="Run the guided one-command Topic 133 oral exam demonstration")
-    exam_demo.add_argument("--pause", type=float, default=1.2, help="Seconds to pause between guided scenes; use 0 for CI")
+    sub.add_parser("doctor", help="Check the local AquaSentinel environment and safety boundary")
+    sub.add_parser("architecture", help="Show the conceptual defensive architecture")
+    sub.add_parser("compliance", help="Show educational NIST/EPA/WHO assurance context")
 
-    sub.add_parser("demo")
-    sub.add_parser("architecture")
-    sub.add_parser("compliance")
-    sub.add_parser("ml-check")
-    sub.add_parser("doctor")
-
-    export = sub.add_parser("report")
-    export.add_argument("--output", default="reports/aquasentinel_exam_report.json")
-
-    args = p.parse_args()
-    if args.cmd == "run":
-        run_scenario(args.scenario, args.samples, args.delay, not args.no_ml, args.seed)
-    elif args.cmd == "live":
-        run_live(args.scenario, args.samples, args.refresh_rate, args.seed, args.fullscreen)
-    elif args.cmd == "web":
+    args = parser.parse_args()
+    if args.cmd == "web":
         run_web(args.port, not args.no_browser, args.check_only)
-    elif args.cmd == "incident":
-        incident_brief(args.scenario, args.step, args.seed)
-    elif args.cmd == "exam-demo":
-        run_exam_demo(max(0.0, args.pause))
+    elif args.cmd == "analyze":
+        if args.check_only:
+            _analysis_check()
+        elif not args.file:
+            raise SystemExit("Provide a file path, for example: aquasentinel analyze plant.log")
+        else:
+            analyze_file(args.file)
+    elif args.cmd == "doctor":
+        doctor()
     elif args.cmd == "architecture":
         architecture()
     elif args.cmd == "compliance":
         console.print(report())
-    elif args.cmd == "ml-check":
-        model = get_model()
-        for scenario in SCENARIOS:
-            t = sample(scenario, 8)
-            console.print(f"{scenario:16} {model.score(t)}")
-    elif args.cmd == "doctor":
-        doctor()
-    elif args.cmd == "report":
-        path = generate_exam_report(args.output)
-        console.print(f"[green]Exam evidence report written to {path}[/green]")
     else:
-        demo()
+        parser.print_help()
+        console.print("\n[bold]Choose an interface:[/bold]")
+        console.print("  Browser:  aquasentinel web")
+        console.print("  Terminal: aquasentinel analyze <file>")
 
 
 if __name__ == "__main__":
