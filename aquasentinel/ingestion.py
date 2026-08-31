@@ -332,6 +332,7 @@ def analyze_dataset(dataset: ParsedDataset) -> dict[str, Any]:
     severities = _severity_counts(records)
     security = _term_counts(records, SECURITY_TERMS)
     process = _term_counts(records, PROCESS_TERMS)
+    combined_indicators = security + process
     ml = _ml_anomalies(records, metrics)
 
     fouling = bool(
@@ -451,7 +452,10 @@ def analyze_dataset(dataset: ParsedDataset) -> dict[str, Any]:
             "review_flags": len(review_flags),
         },
         "severity_counts": dict(severities),
-        "indicators": dict(security.most_common(12)),
+        # Combined process + defensive terms retained for CLI/test compatibility.
+        "indicators": dict(combined_indicators.most_common(12)),
+        # Browser security panel consumes this narrower security-only evidence set.
+        "security_indicators": dict(security.most_common(12)),
         "process_indicators": dict(process.most_common(12)),
         "metrics": metric_summary,
         "review_flags": review_flags,
