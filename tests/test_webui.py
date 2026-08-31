@@ -14,8 +14,13 @@ def test_web_dashboard_is_local_and_read_only():
     assert ".log,.txt,.csv,.json,.jsonl" in HTML
 
 
-def test_web_dashboard_uses_restrained_workstation_language():
+def test_web_dashboard_uses_restrained_topic_133_workstation_language():
     assert "Local analysis workstation" in HTML
     assert "Source profile" in HTML
-    assert "Recognized water / process fields" in HTML
-    assert "Recent records" in HTML
+    assert "Water quality assurance" in HTML
+    assert "Desalination process & predictive maintenance" in HTML
+    assert "OT / SCADA security evidence" in HTML
+    assert "AI anomaly detection" in HTML
+    assert "Cyber-physical correlation & response evidence" in HTML
+    assert "Energy & resource review" in HTML
+    assert "Source records — recent evidence" in HTML
