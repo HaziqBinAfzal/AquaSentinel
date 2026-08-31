@@ -53,12 +53,21 @@ jobs:
               root + 'tests/test_webui.py',
               root + 'docs/PROJECT_GUIDE.md',
           }
+          banned = {
+              root + 'aquasentinel/exam_demo.py',
+              root + 'docs/EXAM_DEMO.md',
+              root + 'run_exam_demo.bat',
+              root + 'run_exam_demo.sh',
+          }
           with ZipFile(archive) as zf:
               names = set(zf.namelist())
           missing = sorted(required - names)
+          present_banned = sorted(banned & names)
           if missing:
               raise SystemExit(f'Missing required distribution files: {missing}')
-          print(f'Package integrity verified: {len(names)} files')
+          if present_banned:
+              raise SystemExit(f'Legacy demo files must not be distributed: {present_banned}')
+          print(f'Package integrity verified: {len(names)} files; legacy demo files absent')
           PY
       - uses: actions/upload-artifact@v4
         with:
