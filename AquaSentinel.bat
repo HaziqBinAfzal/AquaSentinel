@@ -3,6 +3,14 @@ setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 title AquaSentinel AI - One File Launcher
 
+rem Force UTF-8 for Rich terminal output on Windows Command Prompt.
+chcp 65001 >nul 2>&1
+set "PYTHONUTF8=1"
+set "PYTHONIOENCODING=utf-8"
+
+set "CHECK_ONLY=0"
+if /I "%~1"=="--check-only" set "CHECK_ONLY=1"
+
 cls
 echo ================================================================
 echo                  AQUASENTINEL AI v1.0.0-rc1
@@ -14,12 +22,8 @@ echo No real PLC, SCADA, dosing controller or water utility connection.
 echo.
 
 set "PYTHON_CMD="
-where py >nul 2>&1
-if %errorlevel%==0 set "PYTHON_CMD=py -3"
-if not defined PYTHON_CMD (
-    where python >nul 2>&1
-    if %errorlevel%==0 set "PYTHON_CMD=python"
-)
+where py >nul 2>&1 && set "PYTHON_CMD=py -3"
+if not defined PYTHON_CMD where python >nul 2>&1 && set "PYTHON_CMD=python"
 
 if not defined PYTHON_CMD (
     echo [FAIL] Python 3 was not found.
@@ -30,6 +34,11 @@ if not defined PYTHON_CMD (
 echo [1/8] Python detected
 %PYTHON_CMD% --version
 if errorlevel 1 goto :fatal
+%PYTHON_CMD% -c "import sys; raise SystemExit(0 if sys.version_info >= (3,10) else 1)"
+if errorlevel 1 (
+    echo [FAIL] AquaSentinel requires Python 3.10 or newer.
+    goto :fatal
+)
 
 if not exist ".venv\Scripts\python.exe" (
     echo.
@@ -93,6 +102,12 @@ echo ================================================================
 echo                    ALL CHECKS PASSED
 echo ================================================================
 echo.
+
+if "%CHECK_ONLY%"=="1" (
+    echo Windows launcher verification complete.
+    exit /b 0
+)
+
 echo AquaSentinel is ready. Starting the guided Topic 133 demonstration...
 echo Press Ctrl+C at any time if you need to stop the demo.
 echo.
@@ -121,5 +136,6 @@ echo One of the setup or verification stages failed.
 echo Read the error shown above, fix it, then double-click AquaSentinel.bat again.
 echo No real infrastructure was contacted or modified.
 echo.
+if "%CHECK_ONLY%"=="1" exit /b 1
 pause
 exit /b 1
