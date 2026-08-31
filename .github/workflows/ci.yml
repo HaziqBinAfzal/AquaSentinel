@@ -16,7 +16,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --upgrade pip
       - run: pip install -e '.[dev]'
-      - run: ruff check aquasentinel tests
+      - run: ruff check aquasentinel tests scripts/build_user_package.py
       - run: bandit -q -r aquasentinel
       - run: pytest -q
       - run: python -m aquasentinel doctor
@@ -26,3 +26,9 @@ jobs:
       - run: python -m aquasentinel incident --scenario dosing_event --step 8
       - run: python -m aquasentinel exam-demo --pause 0
       - run: python -m aquasentinel report --output reports/ci_exam_report.json
+      - run: python scripts/build_user_package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AquaSentinel-v1.0.0rc1-Windows
+          path: dist/AquaSentinel-v1.0.0rc1-Windows.zip
+          if-no-files-found: error
