@@ -10,7 +10,7 @@ from .dashboard import architecture
 from .doctor import healthy, run_checks
 from .file_analysis import analyze_file
 from .ingestion import analyze_content
-from .webui import run_web
+from .webui import run_web_ui, self_check as web_self_check
 
 console = Console()
 
@@ -48,12 +48,24 @@ def main() -> None:
 
     web = sub.add_parser("web", help="Open the local browser analysis workstation")
     web.add_argument("--port", type=int, default=8765, help="Localhost port; default 8765")
-    web.add_argument("--no-browser", action="store_true", help="Do not open the browser automatically")
-    web.add_argument("--check-only", action="store_true", help="Validate web analysis without starting a server")
+    web.add_argument(
+        "--no-browser", action="store_true", help="Do not open the browser automatically"
+    )
+    web.add_argument(
+        "--check-only",
+        action="store_true",
+        help="Validate web analysis without starting a server",
+    )
 
-    analyze = sub.add_parser("analyze", help="Analyze a local .log, .txt, .csv, .json or .jsonl file")
+    analyze = sub.add_parser(
+        "analyze", help="Analyze a local .log, .txt, .csv, .json or .jsonl file"
+    )
     analyze.add_argument("file", nargs="?", help="Path to the local file")
-    analyze.add_argument("--check-only", action="store_true", help="Run a built-in parser self-check for CI/setup")
+    analyze.add_argument(
+        "--check-only",
+        action="store_true",
+        help="Run a built-in parser self-check for CI/setup",
+    )
 
     sub.add_parser("doctor", help="Check the local AquaSentinel environment and safety boundary")
     sub.add_parser("architecture", help="Show the conceptual defensive architecture")
@@ -61,7 +73,14 @@ def main() -> None:
 
     args = parser.parse_args()
     if args.cmd == "web":
-        run_web(args.port, not args.no_browser, args.check_only)
+        if args.check_only:
+            result = web_self_check()
+            console.print(
+                f"[green]Local web-analysis check passed[/green] "
+                f"(Topic {result['topic']}, {result['records']} records)"
+            )
+        else:
+            run_web_ui(port=args.port, open_browser=not args.no_browser)
     elif args.cmd == "analyze":
         if args.check_only:
             _analysis_check()
