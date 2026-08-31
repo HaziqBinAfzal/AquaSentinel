@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title AquaSentinel AI - One File Launcher
+title AquaSentinel AI - Local Analysis Workstation
 
-rem Force UTF-8 for Rich terminal output on Windows Command Prompt.
+rem UTF-8 support for Rich terminal output on Windows Command Prompt.
 chcp 65001 >nul 2>&1
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
@@ -14,11 +14,12 @@ if /I "%~1"=="--check-only" set "CHECK_ONLY=1"
 cls
 echo ================================================================
 echo                    AQUASENTINEL AI v1.0.0
-echo        Smart Water ^& Desalination Security Platform
+echo              Local Water / OT Analysis Workstation
 echo ================================================================
 echo.
-echo SYNTHETIC - DEFENSIVE - READ ONLY CLASSROOM LAB
-echo No real PLC, SCADA, dosing controller or water utility connection.
+echo DEFENSIVE - LOCAL - READ ONLY
+echo AquaSentinel analyzes files you provide. No dataset is preloaded.
+echo No PLC, SCADA, dosing controller or utility control connection.
 echo.
 
 set "PYTHON_CMD="
@@ -51,7 +52,6 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 set "VENV_PY=.venv\Scripts\python.exe"
-
 if not exist "%VENV_PY%" (
     echo [FAIL] Virtual environment was not created correctly.
     goto :fatal
@@ -85,18 +85,12 @@ if errorlevel 1 goto :fatal
 if errorlevel 1 goto :fatal
 
 echo.
-echo [8/8] Running functional smoke checks...
+echo [8/8] Running local-analysis smoke checks...
 "%VENV_PY%" -m aquasentinel architecture >nul
 if errorlevel 1 goto :fatal
-"%VENV_PY%" -m aquasentinel run --scenario normal --samples 1 >nul
-if errorlevel 1 goto :fatal
-"%VENV_PY%" -m aquasentinel run --scenario dosing_event --samples 1 >nul
-if errorlevel 1 goto :fatal
-"%VENV_PY%" -m aquasentinel incident --scenario dosing_event --step 8 >nul
+"%VENV_PY%" -m aquasentinel analyze --check-only >nul
 if errorlevel 1 goto :fatal
 "%VENV_PY%" -m aquasentinel web --check-only >nul
-if errorlevel 1 goto :fatal
-"%VENV_PY%" -m aquasentinel report --output reports\launcher_preflight_report.json >nul
 if errorlevel 1 goto :fatal
 
 echo.
@@ -110,32 +104,60 @@ if "%CHECK_ONLY%"=="1" (
     exit /b 0
 )
 
-echo Starting AquaSentinel Local Operations Dashboard...
+:menu
+echo Choose how you want to use AquaSentinel:
 echo.
-echo Browser URL: http://127.0.0.1:8765/
-echo The browser should open automatically.
-echo Keep this terminal window open while using the dashboard.
-echo Press Ctrl+C here to stop the localhost server.
-echo.
-echo Optional terminal exam demo command:
-echo   .venv\Scripts\python.exe -m aquasentinel exam-demo
-echo.
-echo Optional terminal SOC dashboard command:
-echo   .venv\Scripts\python.exe -m aquasentinel live --scenario dosing_event --samples 40 --refresh-rate 4 --fullscreen
-echo.
+echo   [1] Browser interface - select and analyze a file in localhost
+ echo   [2] Terminal interface - enter a local file path
+ echo   [Q] Quit
+ echo.
+choice /C 12Q /N /M "Select option [1/2/Q]: "
+if errorlevel 3 exit /b 0
+if errorlevel 2 goto :terminal
+if errorlevel 1 goto :browser
 
+goto :menu
+
+:browser
+echo.
+echo Starting local browser interface...
+echo URL: http://127.0.0.1:8765/
+echo Select a .log, .txt, .csv, .json or .jsonl file in the page.
+echo Keep this terminal open. Press Ctrl+C here to stop the local server.
+echo.
 "%VENV_PY%" -m aquasentinel web --port 8765
 if errorlevel 1 goto :fatal
 exit /b 0
+
+:terminal
+echo.
+echo Supported files: .log .txt .csv .json .jsonl
+set "DATA_FILE="
+set /p "DATA_FILE=Enter or paste the full file path: "
+set "DATA_FILE=!DATA_FILE:"=!"
+if not defined DATA_FILE (
+    echo No file was entered.
+    goto :menu
+)
+if not exist "!DATA_FILE!" (
+    echo [FAIL] File not found: !DATA_FILE!
+    goto :menu
+)
+echo.
+"%VENV_PY%" -m aquasentinel analyze "!DATA_FILE!"
+if errorlevel 1 goto :fatal
+echo.
+pause
+goto :menu
 
 :fatal
 echo.
 echo ================================================================
 echo                    AQUASENTINEL CHECK FAILED
 echo ================================================================
-echo One of the setup or verification stages failed.
-echo Read the error shown above, fix it, then double-click AquaSentinel.bat again.
-echo No real infrastructure was contacted or modified.
+echo One of the setup, verification or analysis stages failed.
+echo Review the error above and try again.
+echo No industrial infrastructure was contacted or modified.
 echo.
 if "%CHECK_ONLY%"=="1" exit /b 1
 pause
