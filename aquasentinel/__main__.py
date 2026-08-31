@@ -10,6 +10,7 @@ from .compliance import report
 from .dashboard import architecture, render
 from .ml import QualityMLModel
 from .scenarios import SCENARIOS
+from .security import correlate, events_for
 from .telemetry import sample
 
 console = Console()
@@ -34,11 +35,16 @@ def run_scenario(name: str, samples: int, delay: float = 0.0, use_ml: bool = Tru
         t = sample(name, i)
         result = analyze(t)
         ml_result = model.score(t) if model else None
+        security_events = events_for(t.cyber_event)
+        correlation = correlate(security_events, result["quality_flags"])
         if ml_result:
             result["priority"] = max(result["priority"], ml_result["ml_priority"])
             if ml_result["ml_state"] == "ANOMALOUS":
                 result["human_review_required"] = True
-        render(t, result, name, ml_result)
+        result["priority"] = max(result["priority"], correlation["correlation_score"])
+        if correlation["correlation_score"] >= 70:
+            result["human_review_required"] = True
+        render(t, result, name, ml_result, correlation)
         record(
             "telemetry_analysis",
             {
@@ -46,6 +52,8 @@ def run_scenario(name: str, samples: int, delay: float = 0.0, use_ml: bool = Tru
                 "telemetry": t.dict(),
                 "analysis": result,
                 "ml": ml_result,
+                "security_events": [event.dict() for event in security_events],
+                "correlation": correlation,
             },
         )
         if delay:
