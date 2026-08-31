@@ -29,7 +29,9 @@ class Telemetry:
 
 
 def sample(scenario: str = "normal", step: int = 0, seed: int = 133) -> Telemetry:
-    r = random.Random(seed + step)
+    # Determinism is intentional for reproducible classroom telemetry. This RNG is
+    # never used for credentials, tokens, cryptography, access control or security decisions.
+    r = random.Random(seed + step)  # nosec B311
     t = Telemetry(
         timestamp=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         ph=round(r.gauss(7.25, .08), 2),
