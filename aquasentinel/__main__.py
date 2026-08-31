@@ -10,6 +10,7 @@ from .audit import record
 from .compliance import report
 from .dashboard import architecture, render
 from .doctor import healthy, run_checks
+from .exam_demo import run_exam_demo
 from .live import run_live
 from .ml import QualityMLModel
 from .optimizer import optimize
@@ -115,6 +116,9 @@ def main() -> None:
     incident.add_argument("--step", type=int, default=8)
     incident.add_argument("--seed", type=int, default=133)
 
+    exam_demo = sub.add_parser("exam-demo", help="Run the guided one-command Topic 133 oral exam demonstration")
+    exam_demo.add_argument("--pause", type=float, default=1.2, help="Seconds to pause between guided scenes; use 0 for CI")
+
     sub.add_parser("demo")
     sub.add_parser("architecture")
     sub.add_parser("compliance")
@@ -131,6 +135,8 @@ def main() -> None:
         run_live(args.scenario, args.samples, args.refresh_rate, args.seed, args.fullscreen)
     elif args.cmd == "incident":
         incident_brief(args.scenario, args.step, args.seed)
+    elif args.cmd == "exam-demo":
+        run_exam_demo(max(0.0, args.pause))
     elif args.cmd == "architecture":
         architecture()
     elif args.cmd == "compliance":
