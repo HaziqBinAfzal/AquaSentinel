@@ -66,10 +66,13 @@ def main() -> None:
             "Windows:\n"
             "1. Extract this ZIP to a normal folder.\n"
             "2. Double-click AquaSentinel.bat.\n"
-            "3. The launcher creates the environment, installs dependencies, runs checks, and starts the guided demo.\n\n"
+            "3. The launcher creates the environment, installs dependencies, runs all verification checks, and then opens the local browser dashboard.\n"
+            "4. Dashboard address: http://127.0.0.1:8765/\n"
+            "5. Keep the launcher terminal open while using the dashboard; press Ctrl+C there to stop the local server.\n\n"
+            "Terminal exam mode is still available with: .venv\\Scripts\\python.exe -m aquasentinel exam-demo\n\n"
             "Requirement: Python 3.10 or newer must be installed and available as 'py' or 'python'.\n\n"
             "SAFETY BOUNDARY\n"
-            "This is a synthetic, defensive, read-only classroom simulation. It does not connect to or control real PLC, SCADA, dosing, water-treatment or public-health infrastructure.\n"
+            "This is a synthetic, defensive, read-only classroom simulation. The browser UI is localhost-only and does not connect to or control real PLC, SCADA, dosing, water-treatment or public-health infrastructure.\n"
         )
         archive.writestr(f"{PACKAGE_NAME}/START_HERE.txt", quick_start)
 
