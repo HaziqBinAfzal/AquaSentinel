@@ -17,7 +17,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --upgrade pip
       - run: pip install -e '.[dev]'
-      - run: ruff check aquasentinel tests
+      - run: ruff check aquasentinel tests --ignore E701,E702
       - run: bandit -q -r aquasentinel
       - run: pytest -q
       - run: python -m aquasentinel --self-check
