@@ -1,0 +1,26 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {"type":"text","title":"","gridPos":{"h":3,"w":24,"x":0,"y":0},"options":{"mode":"markdown","content":"# ≈ AQUASENTINEL // WATER CYBER DEFENSE OPERATIONS CENTER\n**LOCAL EVIDENCE • READ-ONLY • SCHEMA-DRIVEN • HUMAN-REVIEWED**\n\nINGEST → PROFILE → INFER → AI ANOMALY ANALYSIS → RISK PRIORITIZATION → REVIEW"}},
+    {"type":"stat","title":"EVIDENCE SOURCES","gridPos":{"h":4,"w":5,"x":0,"y":3},"targets":[{"expr":"aquasentinel_evidence_files","refId":"A"}],"fieldConfig":{"defaults":{"color":{"mode":"fixedColor","fixedColor":"blue"},"unit":"short"},"overrides":[]}},
+    {"type":"stat","title":"RECORDS INDEXED","gridPos":{"h":4,"w":5,"x":5,"y":3},"targets":[{"expr":"aquasentinel_evidence_rows","refId":"A"}],"fieldConfig":{"defaults":{"color":{"mode":"fixedColor","fixedColor":"light-blue"}},"overrides":[]}},
+    {"type":"gauge","title":"CROSS-SOURCE RISK","gridPos":{"h":7,"w":7,"x":10,"y":3},"targets":[{"expr":"aquasentinel_evidence_risk_score","refId":"A"}],"fieldConfig":{"defaults":{"min":0,"max":100,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":40},{"color":"orange","value":70},{"color":"red","value":85}]}},"overrides":[]}},
+    {"type":"stat","title":"AI MODEL FLAGS","gridPos":{"h":4,"w":7,"x":17,"y":3},"targets":[{"expr":"aquasentinel_model_flags","refId":"A"}],"fieldConfig":{"defaults":{"color":{"mode":"fixedColor","fixedColor":"purple"}},"overrides":[]}},
+    {"type":"bargauge","title":"RISK RADAR // EVIDENCE SOURCES","gridPos":{"h":8,"w":12,"x":0,"y":10},"targets":[{"expr":"sort_desc(aquasentinel_dataset_anomaly_score)","legendFormat":"{{file}} // {{domain}}","refId":"A"}],"options":{"orientation":"horizontal","displayMode":"gradient","showUnfilled":true},"fieldConfig":{"defaults":{"min":0,"max":100,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":40},{"color":"red","value":70}]}},"overrides":[]}},
+    {"type":"bargauge","title":"DATA QUALITY // MISSINGNESS","gridPos":{"h":8,"w":12,"x":12,"y":10},"targets":[{"expr":"sort_desc(aquasentinel_dataset_missing_pct)","legendFormat":"{{file}} // {{domain}}","refId":"A"}],"options":{"orientation":"horizontal","displayMode":"lcd","showUnfilled":true},"fieldConfig":{"defaults":{"min":0,"max":100,"unit":"percent","thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":5},{"color":"red","value":20}]}},"overrides":[]}},
+    {"type":"table","title":"ACTIVE EVIDENCE INVENTORY","gridPos":{"h":8,"w":14,"x":0,"y":18},"targets":[{"expr":"aquasentinel_dataset_rows","format":"table","instant":true,"legendFormat":"{{file}}","refId":"A"}],"options":{"showHeader":true}},
+    {"type":"bargauge","title":"AI FLAGS // SOURCE LOAD","gridPos":{"h":8,"w":10,"x":14,"y":18},"targets":[{"expr":"sort_desc(aquasentinel_dataset_anomaly_flags)","legendFormat":"{{file}} // {{domain}}","refId":"A"}],"options":{"orientation":"horizontal","displayMode":"lcd","showUnfilled":true}},
+    {"type":"text","title":"AQUASENTINEL SAFETY BOUNDARY","gridPos":{"h":5,"w":24,"x":0,"y":26},"options":{"mode":"markdown","content":"**CONTROL WRITE PATH: DISABLED**\n\nNo autonomous PLC/SCADA actuation • No dosing/valve/pump commands • No fabricated water-safety claims • No offensive tooling.\n\n**NO EVIDENCE → NO METRIC → NO FABRICATED FINDING.** Anomaly indicators require qualified human validation and are not proof of contamination or cyber compromise."}}
+  ],
+  "refresh":"3s",
+  "schemaVersion":39,
+  "tags":["aquasentinel","water-security","evidence-analysis"],
+  "templating":{"list":[]},
+  "time":{"from":"now-15m","to":"now"},
+  "timezone":"browser",
+  "title":"AquaSentinel — Water Cyber Defense Operations Center",
+  "uid":"aquasentinel-main",
+  "version":1
+}
