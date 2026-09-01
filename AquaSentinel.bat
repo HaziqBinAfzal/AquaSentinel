@@ -1,164 +1,117 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title AquaSentinel AI - Local Analysis Workstation
-
-rem UTF-8 support for Rich terminal output on Windows Command Prompt.
+title AquaSentinel - Water Security and Resilience Workstation
 chcp 65001 >nul 2>&1
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
-
-set "CHECK_ONLY=0"
-if /I "%~1"=="--check-only" set "CHECK_ONLY=1"
-
 cls
-echo ================================================================
-echo                    AQUASENTINEL AI v1.0.0
-echo              Local Water / OT Analysis Workstation
-echo ================================================================
+echo ========================================================================
+echo                              AQUASENTINEL
+echo                 WATER SECURITY ^& RESILIENCE WORKSTATION
+echo ========================================================================
+echo   EVIDENCE-DRIVEN ^| LOCAL ^| READ-ONLY ^| SCHEMA-ADAPTIVE ^| HUMAN REVIEW
+echo   No PLC, SCADA, pump, valve or dosing-controller control connection.
 echo.
-echo DEFENSIVE - LOCAL - READ ONLY
-echo AquaSentinel analyzes files you provide. No dataset is preloaded.
-echo No PLC, SCADA, dosing controller or utility control connection.
-echo.
-
 set "PYTHON_CMD="
 where py >nul 2>&1 && set "PYTHON_CMD=py -3"
 if not defined PYTHON_CMD where python >nul 2>&1 && set "PYTHON_CMD=python"
-
-if not defined PYTHON_CMD (
-    echo [FAIL] Python 3 was not found.
-    echo Install Python 3.10 or newer, then run this file again.
-    goto :fatal
-)
-
-echo [1/8] Python detected
-%PYTHON_CMD% --version
-if errorlevel 1 goto :fatal
+if not defined PYTHON_CMD (echo [FAIL] Python 3.10+ was not found.&goto :fatal)
 %PYTHON_CMD% -c "import sys; raise SystemExit(0 if sys.version_info >= (3,10) else 1)"
-if errorlevel 1 (
-    echo [FAIL] AquaSentinel requires Python 3.10 or newer.
-    goto :fatal
-)
-
-if not exist ".venv\Scripts\python.exe" (
-    echo.
-    echo [2/8] Creating isolated AquaSentinel environment...
-    %PYTHON_CMD% -m venv .venv
-    if errorlevel 1 goto :fatal
-) else (
-    echo.
-    echo [2/8] Existing AquaSentinel environment found
-)
-
+if errorlevel 1 (echo [FAIL] AquaSentinel requires Python 3.10 or newer.&goto :fatal)
+if not exist ".venv\Scripts\python.exe" (%PYTHON_CMD% -m venv .venv || goto :fatal)
 set "VENV_PY=.venv\Scripts\python.exe"
-if not exist "%VENV_PY%" (
-    echo [FAIL] Virtual environment was not created correctly.
-    goto :fatal
-)
-
-echo.
-echo [3/8] Preparing package tools...
-"%VENV_PY%" -m pip install --upgrade pip >nul
-if errorlevel 1 goto :fatal
-
-echo.
-echo [4/8] Installing AquaSentinel and verification tools...
-"%VENV_PY%" -m pip install -e ".[dev]"
-if errorlevel 1 goto :fatal
-
-echo.
-echo [5/8] Running environment and safety checks...
-"%VENV_PY%" -m aquasentinel doctor
-if errorlevel 1 goto :fatal
-
-echo.
-echo [6/8] Running project tests...
-"%VENV_PY%" -m pytest -q
-if errorlevel 1 goto :fatal
-
-echo.
-echo [7/8] Running code-quality and defensive security checks...
-"%VENV_PY%" -m ruff check aquasentinel tests
-if errorlevel 1 goto :fatal
-"%VENV_PY%" -m bandit -q -r aquasentinel
-if errorlevel 1 goto :fatal
-
-echo.
-echo [8/8] Running local-analysis smoke checks...
-"%VENV_PY%" -m aquasentinel architecture >nul
-if errorlevel 1 goto :fatal
-"%VENV_PY%" -m aquasentinel analyze --check-only >nul
-if errorlevel 1 goto :fatal
-"%VENV_PY%" -m aquasentinel web --check-only >nul
-if errorlevel 1 goto :fatal
-
-echo.
-echo ================================================================
-echo                    ALL CHECKS PASSED
-echo ================================================================
-echo.
-
-if "%CHECK_ONLY%"=="1" (
-    echo Windows launcher verification complete.
-    exit /b 0
-)
-
+"%VENV_PY%" -c "import aquasentinel, rich, sklearn, openpyxl, prometheus_client" >nul 2>&1
+if errorlevel 1 (echo [SETUP] Installing AquaSentinel dependencies...&"%VENV_PY%" -m pip install -e . || goto :fatal)
+"%VENV_PY%" -m aquasentinel --self-check >nul || goto :fatal
+echo [READY] AquaSentinel analysis engine online.
 :menu
-echo Choose how you want to use AquaSentinel:
 echo.
-echo   [1] Browser interface - select and analyze a file in localhost
- echo   [2] Terminal interface - enter a local file path
- echo   [Q] Quit
- echo.
-choice /C 12Q /N /M "Select option [1/2/Q]: "
-if errorlevel 3 exit /b 0
-if errorlevel 2 goto :terminal
-if errorlevel 1 goto :browser
-
+echo ------------------------------------------------------------------------
+echo   [1] LOAD EVIDENCE + TERMINAL COMMAND CENTER
+ echo   [2] COMMAND CENTER + LIVE GRAFANA MONITORING
+ echo   [3] ANALYZE EVIDENCE + EXPORT ASSURANCE REPORT
+ echo   [4] OPEN GRAFANA
+ echo   [5] OPEN PROMETHEUS
+ echo   [6] OPEN RAW METRICS
+ echo   [7] SYSTEM DIAGNOSTICS
+ echo   [8] ARCHITECTURE ^& ASSURANCE
+ echo   [Q] QUIT
+ echo ------------------------------------------------------------------------
+choice /C 12345678Q /N /M "Select option: "
+if errorlevel 9 exit /b 0
+if errorlevel 8 goto :assurance
+if errorlevel 7 goto :diagnostics
+if errorlevel 6 goto :metrics
+if errorlevel 5 goto :prometheus
+if errorlevel 4 goto :grafana
+if errorlevel 3 goto :report
+if errorlevel 2 goto :monitoring
+if errorlevel 1 goto :command
 goto :menu
-
-:browser
+:collect
+set "EVIDENCE_ARGS="&set /a COUNT=0
+echo Supported evidence: CSV, JSON, JSONL, XLSX
+echo Enter one file or folder at a time. Drag-and-drop paths are supported.
+echo Press ENTER on an empty line when finished.
+:collect_loop
+set "ITEM="&set /p "ITEM=Evidence path: "&set "ITEM=!ITEM:"=!"
+if not defined ITEM goto :collect_done
+if not exist "!ITEM!" (echo [SKIP] Path not found: !ITEM!&goto :collect_loop)
+set "EVIDENCE_ARGS=!EVIDENCE_ARGS! "!ITEM!""&set /a COUNT+=1&echo [ADDED] !ITEM!&goto :collect_loop
+:collect_done
+if !COUNT! EQU 0 (echo No evidence was selected.&exit /b 1)
+echo [READY] !COUNT! evidence path(s) selected.&exit /b 0
+:command
+call :collect
+if errorlevel 1 goto :menu
+"%VENV_PY%" -m aquasentinel --files !EVIDENCE_ARGS! --command-center || goto :fatal
+pause&goto :menu
+:report
+call :collect
+if errorlevel 1 goto :menu
+if not exist "reports" mkdir "reports"
+for /f %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "STAMP=%%T"
+set "REPORT_PATH=reports\AquaSentinel-Evidence-Report-!STAMP!.md"
+"%VENV_PY%" -m aquasentinel --files !EVIDENCE_ARGS! --command-center --report "!REPORT_PATH!" || goto :fatal
 echo.
-echo Starting local browser interface...
-echo URL: http://127.0.0.1:8765/
-echo Select a .log, .txt, .csv, .json or .jsonl file in the page.
-echo Keep this terminal open. Press Ctrl+C here to stop the local server.
-echo.
-"%VENV_PY%" -m aquasentinel web --port 8765
-if errorlevel 1 goto :fatal
-exit /b 0
-
-:terminal
-echo.
-echo Supported files: .log .txt .csv .json .jsonl
-set "DATA_FILE="
-set /p "DATA_FILE=Enter or paste the full file path: "
-set "DATA_FILE=!DATA_FILE:"=!"
-if not defined DATA_FILE (
-    echo No file was entered.
-    goto :menu
-)
-if not exist "!DATA_FILE!" (
-    echo [FAIL] File not found: !DATA_FILE!
-    goto :menu
-)
-echo.
-"%VENV_PY%" -m aquasentinel analyze "!DATA_FILE!"
-if errorlevel 1 goto :fatal
-echo.
-pause
-goto :menu
-
+echo [EXPORTED] !REPORT_PATH!
+start "" notepad "!REPORT_PATH!"
+pause&goto :menu
+:monitoring
+call :collect
+if errorlevel 1 goto :menu
+where docker >nul 2>&1
+if errorlevel 1 (echo [FAIL] Docker Desktop / Docker CLI was not found.&goto :menu)
+start "AquaSentinel Metrics" /min cmd /c ""%VENV_PY%" -m aquasentinel --files !EVIDENCE_ARGS! --monitor --metrics-port 9118"
+timeout /t 2 /nobreak >nul
+docker compose up -d || goto :menu
+timeout /t 5 /nobreak >nul
+start "" http://localhost:3001/d/aquasentinel-main
+"%VENV_PY%" -m aquasentinel --files !EVIDENCE_ARGS! --command-center || goto :fatal
+echo Grafana http://localhost:3001/d/aquasentinel-main ^| Prometheus http://localhost:9091 ^| Metrics http://localhost:9118/metrics
+echo Login: admin / aquasentinel
+echo Press ENTER when finished with this monitoring session.
+set /p "STOPSESSION="
+docker compose down >nul 2>&1
+taskkill /FI "WINDOWTITLE eq AquaSentinel Metrics" /T /F >nul 2>&1
+echo [STOPPED] Monitoring session closed cleanly.&goto :menu
+:grafana
+start "" http://localhost:3001/d/aquasentinel-main&goto :menu
+:prometheus
+start "" http://localhost:9091&goto :menu
+:metrics
+start "" http://localhost:9118/metrics&goto :menu
+:diagnostics
+"%VENV_PY%" -m aquasentinel --self-check
+where docker >nul 2>&1 && docker compose ps
+pause&goto :menu
+:assurance
+"%VENV_PY%" -m aquasentinel --architecture
+"%VENV_PY%" -m aquasentinel --compliance
+pause&goto :menu
 :fatal
 echo.
-echo ================================================================
-echo                    AQUASENTINEL CHECK FAILED
-echo ================================================================
-echo One of the setup, verification or analysis stages failed.
-echo Review the error above and try again.
-echo No industrial infrastructure was contacted or modified.
-echo.
-if "%CHECK_ONLY%"=="1" exit /b 1
-pause
-exit /b 1
+echo ======================= AQUASENTINEL STARTUP FAILED ======================
+echo Review the message above. No industrial infrastructure was contacted.
+pause&exit /b 1

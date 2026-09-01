@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import time
+from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
@@ -8,9 +10,9 @@ from rich.table import Table
 from .compliance import report
 from .dashboard import architecture
 from .doctor import healthy, run_checks
-from .file_analysis import analyze_file
-from .ingestion import analyze_content
-from .webui import run_web_ui, self_check as web_self_check
+from .evidence import SUPPORTED_SUFFIXES, analyze_package
+from .evidence_report import export_report
+from .terminal_command_center import render_command_center
 
 console = Console()
 
@@ -28,77 +30,160 @@ def doctor() -> None:
         raise SystemExit(1)
 
 
-def _analysis_check() -> None:
-    probe = (
-        "timestamp,severity,ph,conductivity,turbidity,ro_pressure,flow_rate,membrane_health\n"
-        "2026-01-01T00:00:00Z,info,7.2,420,0.3,58,102,92\n"
-        "2026-01-01T00:01:00Z,warning,7.3,425,0.4,59,101,91\n"
+def _collect_paths(values: list[str]) -> list[Path]:
+    paths: list[Path] = []
+    for value in values:
+        candidate = Path(value).expanduser()
+        if candidate.is_dir():
+            paths.extend(
+                sorted(
+                    path
+                    for path in candidate.iterdir()
+                    if path.is_file() and path.suffix.lower() in SUPPORTED_SUFFIXES
+                )
+            )
+        elif candidate.is_file() and candidate.suffix.lower() in SUPPORTED_SUFFIXES:
+            paths.append(candidate)
+        else:
+            raise SystemExit(f"Unsupported or missing evidence path: {value}")
+
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for path in paths:
+        key = str(path.resolve())
+        if key not in seen:
+            seen.add(key)
+            unique.append(path)
+
+    if not unique:
+        raise SystemExit("No supported evidence files were supplied.")
+    return unique
+
+
+def _self_check() -> None:
+    console.print("[green]AquaSentinel schema-driven CLI loaded successfully.[/green]")
+    console.print(
+        "[dim]Normal operation requires user-supplied evidence; "
+        "no synthetic scenario is auto-loaded.[/dim]"
     )
-    result = analyze_content("self-check.csv", probe)
-    if result["source"]["records"] != 2 or "ph" not in result["metrics"]:
-        raise SystemExit("File-analysis self-check failed")
-    console.print("[green]Local file-analysis check passed[/green]")
+
+
+def _render_summary(package) -> None:
+    table = Table(title="AquaSentinel Evidence Analysis")
+    table.add_column("Evidence")
+    table.add_column("Domain")
+    table.add_column("Records", justify="right")
+    table.add_column("Features", justify="right")
+    table.add_column("Anomaly", justify="right")
+    table.add_column("Flags", justify="right")
+    for item in package.datasets:
+        table.add_row(
+            item.name,
+            item.domain,
+            str(item.rows),
+            str(len(item.numeric_features)),
+            f"{item.anomaly_score:.1f}",
+            str(item.anomaly_flags),
+        )
+    console.print(table)
+    console.print(
+        f"Overall advisory risk: [bold]{package.risk_score:.1f}/100 "
+        f"{package.risk_level}[/bold]"
+    )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="AquaSentinel AI local defensive log and water/process data analyzer"
+        description=(
+            "AquaSentinel schema-driven defensive smart-water evidence analysis "
+            "workstation"
+        )
     )
-    sub = parser.add_subparsers(dest="cmd")
-
-    web = sub.add_parser("web", help="Open the local browser analysis workstation")
-    web.add_argument("--port", type=int, default=8765, help="Localhost port; default 8765")
-    web.add_argument(
-        "--no-browser", action="store_true", help="Do not open the browser automatically"
+    parser.add_argument(
+        "--files",
+        nargs="+",
+        metavar="PATH",
+        help="Evidence files or directories (.csv/.json/.jsonl/.xlsx)",
     )
-    web.add_argument(
-        "--check-only",
+    parser.add_argument(
+        "--command-center",
         action="store_true",
-        help="Validate web analysis without starting a server",
+        help="Render the terminal Water Security & Resilience Command Center",
     )
-
-    analyze = sub.add_parser(
-        "analyze", help="Analyze a local .log, .txt, .csv, .json or .jsonl file"
+    parser.add_argument(
+        "--report",
+        metavar="PATH",
+        help="Export a Markdown evidence and assurance report",
     )
-    analyze.add_argument("file", nargs="?", help="Path to the local file")
-    analyze.add_argument(
-        "--check-only",
+    parser.add_argument(
+        "--monitor",
         action="store_true",
-        help="Run a built-in parser self-check for CI/setup",
+        help="Publish the active evidence package as Prometheus metrics",
     )
-
-    sub.add_parser("doctor", help="Check the local AquaSentinel environment and safety boundary")
-    sub.add_parser("architecture", help="Show the conceptual defensive architecture")
-    sub.add_parser("compliance", help="Show educational NIST/EPA/WHO assurance context")
-
+    parser.add_argument(
+        "--metrics-port",
+        type=int,
+        default=9118,
+        help="Prometheus exporter port; default 9118",
+    )
+    parser.add_argument("--self-check", action="store_true")
+    parser.add_argument("--architecture", action="store_true")
+    parser.add_argument("--compliance", action="store_true")
     args = parser.parse_args()
-    if args.cmd == "web":
-        if args.check_only:
-            result = web_self_check()
-            console.print(
-                f"[green]Local web-analysis check passed[/green] "
-                f"(Topic {result['topic']}, {result['records']} records)"
-            )
-        else:
-            run_web_ui(port=args.port, open_browser=not args.no_browser)
-    elif args.cmd == "analyze":
-        if args.check_only:
-            _analysis_check()
-        elif not args.file:
-            raise SystemExit("Provide a file path, for example: aquasentinel analyze plant.log")
-        else:
-            analyze_file(args.file)
-    elif args.cmd == "doctor":
-        doctor()
-    elif args.cmd == "architecture":
+
+    if args.self_check:
+        _self_check()
+        return
+    if args.architecture:
         architecture()
-    elif args.cmd == "compliance":
+        return
+    if args.compliance:
         console.print(report())
-    else:
+        return
+    if not args.files:
         parser.print_help()
-        console.print("\n[bold]Choose an interface:[/bold]")
-        console.print("  Browser:  aquasentinel web")
-        console.print("  Terminal: aquasentinel analyze <file>")
+        console.print("\n[bold cyan]Evidence-driven workflow[/bold cyan]")
+        console.print("  aquasentinel --files evidence.csv --command-center")
+        console.print(
+            "  aquasentinel --files evidence_folder --command-center "
+            "--report reports/evidence.md"
+        )
+        console.print(
+            "  aquasentinel --files evidence_folder --command-center --monitor"
+        )
+        console.print(
+            "\n[dim]No simulator or fixed evidence filename is auto-loaded.[/dim]"
+        )
+        return
+
+    package = analyze_package(_collect_paths(args.files))
+    if args.command_center:
+        render_command_center(package, console)
+    else:
+        _render_summary(package)
+
+    if args.report:
+        output = export_report(package, args.report)
+        console.print(f"\n[green]Evidence report exported:[/] {output}")
+
+    if args.monitor:
+        from .evidence_metrics import serve_package
+
+        serve_package(package, args.metrics_port)
+        console.print(
+            f"\n[bold cyan]LIVE EVIDENCE METRICS[/bold cyan] "
+            f"http://127.0.0.1:{args.metrics_port}/metrics"
+        )
+        console.print(
+            "[dim]Exporter contains analyzed evidence only; "
+            "it does not connect to plant systems.[/dim]"
+        )
+        console.print("[yellow]Press Ctrl+C to stop the metrics session.[/yellow]")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            console.print("\n[cyan]AquaSentinel monitoring session stopped.[/cyan]")
 
 
 if __name__ == "__main__":
