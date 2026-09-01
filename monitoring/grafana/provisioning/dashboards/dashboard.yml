@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: AquaSentinel
+    orgId: 1
+    folder: AquaSentinel
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 5
+    options:
+      path: /var/lib/grafana/dashboards
