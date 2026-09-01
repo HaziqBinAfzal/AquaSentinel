@@ -28,31 +28,27 @@ if errorlevel 1 (
   echo [FAIL] AquaSentinel requires Python 3.10 or newer.
   goto :fatal
 )
-
 if not exist ".venv\Scripts\python.exe" (
   echo [SETUP] Creating isolated Python environment...
   %PYTHON_CMD% -m venv .venv
   if errorlevel 1 goto :fatal
 )
 set "VENV_PY=.venv\Scripts\python.exe"
-
 "%VENV_PY%" -c "import aquasentinel, rich, sklearn, openpyxl, prometheus_client" >nul 2>&1
 if errorlevel 1 (
   echo [SETUP] Installing AquaSentinel dependencies...
   "%VENV_PY%" -m pip install -e .
   if errorlevel 1 goto :fatal
 )
-
 "%VENV_PY%" -m aquasentinel --self-check >nul
 if errorlevel 1 goto :fatal
-
 echo [READY] AquaSentinel analysis engine online.
 
 :menu
 echo.
 echo ------------------------------------------------------------------------
 echo   [1] LOAD EVIDENCE + OPEN TERMINAL COMMAND CENTER
- echo   [2] COMMAND CENTER + GRAFANA MONITORING
+ echo   [2] COMMAND CENTER + LIVE GRAFANA MONITORING
  echo   [3] OPEN GRAFANA
  echo   [4] OPEN PROMETHEUS
  echo   [5] OPEN RAW METRICS
@@ -69,7 +65,6 @@ if errorlevel 4 goto :prometheus
 if errorlevel 3 goto :grafana
 if errorlevel 2 goto :monitoring
 if errorlevel 1 goto :command
-
 goto :menu
 
 :collect
@@ -103,75 +98,77 @@ exit /b 0
 :command
 call :collect
 if errorlevel 1 goto :menu
-echo.
 "%VENV_PY%" -m aquasentinel --files !EVIDENCE_ARGS! --command-center
 if errorlevel 1 goto :fatal
-echo.
 pause
 goto :menu
 
 :monitoring
 call :collect
 if errorlevel 1 goto :menu
-echo.
-echo [MONITORING] Starting local Prometheus + Grafana stack...
 where docker >nul 2>&1
 if errorlevel 1 (
   echo [FAIL] Docker Desktop / Docker CLI was not found.
   goto :menu
 )
+echo.
+echo [1/4] Starting AquaSentinel evidence metrics exporter...
+start "AquaSentinel Metrics" /min cmd /c ""%VENV_PY%" -m aquasentinel --files !EVIDENCE_ARGS! --monitor --metrics-port 9118"
+timeout /t 2 /nobreak >nul
+echo [2/4] Starting Prometheus + Grafana...
 docker compose up -d
 if errorlevel 1 (
   echo [FAIL] Monitoring containers could not start. Check Docker Desktop.
   goto :menu
 )
+echo [3/4] Waiting for local monitoring services...
+timeout /t 5 /nobreak >nul
 start "" http://localhost:3001/d/aquasentinel-main
+start "" http://localhost:9118/metrics
+echo [4/4] Opening evidence-driven Terminal Command Center...
+echo.
 echo Grafana:    http://localhost:3001/d/aquasentinel-main
  echo Prometheus: http://localhost:9091
  echo Metrics:    http://localhost:9118/metrics
  echo Login: admin / aquasentinel
  echo.
-echo Opening Terminal Command Center first...
 "%VENV_PY%" -m aquasentinel --files !EVIDENCE_ARGS! --command-center
+if errorlevel 1 goto :fatal
 echo.
-echo NOTE: Prometheus evidence exporter wiring is finalized in the next integration stage.
-echo Monitoring containers can be stopped with: docker compose down
-pause
+echo LIVE MONITORING ACTIVE. Review Grafana in your browser.
+echo Press ENTER when you are finished with this monitoring session.
+set /p "STOPSESSION="
+echo Stopping local monitoring services...
+docker compose down >nul 2>&1
+taskkill /FI "WINDOWTITLE eq AquaSentinel Metrics" /T /F >nul 2>&1
+echo [STOPPED] Monitoring session closed cleanly.
 goto :menu
 
 :grafana
 start "" http://localhost:3001/d/aquasentinel-main
 goto :menu
-
 :prometheus
 start "" http://localhost:9091
 goto :menu
-
 :metrics
 start "" http://localhost:9118/metrics
 goto :menu
-
 :diagnostics
-echo.
 "%VENV_PY%" -m aquasentinel --self-check
 "%VENV_PY%" -m aquasentinel doctor
 where docker >nul 2>&1 && docker compose ps
 pause
 goto :menu
-
 :assurance
-echo.
 "%VENV_PY%" -m aquasentinel --architecture
 "%VENV_PY%" -m aquasentinel --compliance
 pause
 goto :menu
-
 :fatal
 echo.
 echo ========================================================================
 echo                         AQUASENTINEL STARTUP FAILED
 echo ========================================================================
 echo Review the message above. No industrial infrastructure was contacted.
-echo.
 pause
 exit /b 1
