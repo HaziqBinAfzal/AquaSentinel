@@ -13,6 +13,7 @@ dependencies = [
   "scikit-learn>=1.5,<2",
   "openpyxl>=3.1,<4",
   "prometheus-client>=0.20,<1",
+  "flask>=3.0,<4",
 ]
 
 [project.optional-dependencies]
@@ -24,9 +25,13 @@ dev = [
 
 [project.scripts]
 aquasentinel = "aquasentinel.__main__:main"
+aquasentinel-web = "aquasentinel.webapp:main"
 
 [tool.setuptools.packages.find]
 include = ["aquasentinel*"]
+
+[tool.setuptools.package-data]
+aquasentinel = ["templates/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
