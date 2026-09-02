@@ -21,7 +21,7 @@ if not defined PYTHON_CMD (echo [FAIL] Python 3.10+ was not found.&goto :fatal)
 if errorlevel 1 (echo [FAIL] AquaSentinel requires Python 3.10 or newer.&goto :fatal)
 if not exist ".venv\Scripts\python.exe" (%PYTHON_CMD% -m venv .venv || goto :fatal)
 set "VENV_PY=.venv\Scripts\python.exe"
-"%VENV_PY%" -c "import aquasentinel, rich, sklearn, openpyxl, prometheus_client" >nul 2>&1
+"%VENV_PY%" -c "import aquasentinel, rich, sklearn, openpyxl, prometheus_client, flask" >nul 2>&1
 if errorlevel 1 (echo [SETUP] Installing AquaSentinel dependencies...&"%VENV_PY%" -m pip install -e . || goto :fatal)
 "%VENV_PY%" -m aquasentinel --self-check >nul || goto :fatal
 echo [READY] AquaSentinel analysis engine online.
@@ -36,10 +36,12 @@ echo   [1] LOAD EVIDENCE + TERMINAL COMMAND CENTER
  echo   [6] OPEN RAW METRICS
  echo   [7] SYSTEM DIAGNOSTICS
  echo   [8] ARCHITECTURE ^& ASSURANCE
+ echo   [9] WEB EVIDENCE WORKSTATION
  echo   [Q] QUIT
  echo ------------------------------------------------------------------------
-choice /C 12345678Q /N /M "Select option: "
-if errorlevel 9 exit /b 0
+choice /C 123456789Q /N /M "Select option: "
+if errorlevel 10 exit /b 0
+if errorlevel 9 goto :web
 if errorlevel 8 goto :assurance
 if errorlevel 7 goto :diagnostics
 if errorlevel 6 goto :metrics
@@ -50,15 +52,21 @@ if errorlevel 2 goto :monitoring
 if errorlevel 1 goto :command
 goto :menu
 :collect
-set "EVIDENCE_ARGS="&set /a COUNT=0
+set "EVIDENCE_ARGS="
+set /a COUNT=0
 echo Supported evidence: CSV, JSON, JSONL, XLSX
 echo Enter one file or folder at a time. Drag-and-drop paths are supported.
 echo Press ENTER on an empty line when finished.
 :collect_loop
-set "ITEM="&set /p "ITEM=Evidence path: "&set "ITEM=!ITEM:"=!"
+set "ITEM="
+set /p "ITEM=Evidence path: "
 if not defined ITEM goto :collect_done
+for %%A in ("!ITEM!") do set "ITEM=%%~A"
 if not exist "!ITEM!" (echo [SKIP] Path not found: !ITEM!&goto :collect_loop)
-set "EVIDENCE_ARGS=!EVIDENCE_ARGS! "!ITEM!""&set /a COUNT+=1&echo [ADDED] !ITEM!&goto :collect_loop
+set "EVIDENCE_ARGS=!EVIDENCE_ARGS! "!ITEM!""
+set /a COUNT+=1
+echo [ADDED] !ITEM!
+goto :collect_loop
 :collect_done
 if !COUNT! EQU 0 (echo No evidence was selected.&exit /b 1)
 echo [READY] !COUNT! evidence path(s) selected.&exit /b 0
@@ -96,6 +104,12 @@ set /p "STOPSESSION="
 docker compose down >nul 2>&1
 taskkill /FI "WINDOWTITLE eq AquaSentinel Metrics" /T /F >nul 2>&1
 echo [STOPPED] Monitoring session closed cleanly.&goto :menu
+:web
+echo [WEB] Starting local AquaSentinel browser workstation...
+echo [WEB] Uploads are analyzed locally and removed after each request.
+"%VENV_PY%" -m aquasentinel.webapp
+if errorlevel 1 goto :fatal
+goto :menu
 :grafana
 start "" http://localhost:3001/d/aquasentinel-main&goto :menu
 :prometheus
