@@ -15,19 +15,27 @@ AquaSentinel is a local, schema-driven analysis workstation for user-supplied wa
 
 > **Safety boundary:** AquaSentinel is read-only and educational. It does not connect to or control PLCs, SCADA systems, pumps, valves, dosing controllers, treatment equipment or water utilities. An anomaly is not proof of contamination, unsafe water or cyber compromise. Findings require qualified human review.
 
----
+## Browser evidence workstation
+
+AquaSentinel now includes a local interactive browser interface that uses the same schema-driven evidence engine as the terminal workflow. Start `AquaSentinel.bat` and choose **9 — WEB EVIDENCE WORKSTATION**, or run:
+
+```bash
+python -m aquasentinel.webapp
+```
+
+The browser opens on `http://127.0.0.1:8765`. Upload one or more CSV, JSON, JSONL or XLSX files and the page analyzes the actual files locally. It displays evidence counts, advisory risk, inferred domain, domain confidence, discovered numeric features, missingness, anomaly method and pressure, flags, timestamp evidence, SHA-256 provenance, analysis notes and compatible cross-source time evidence.
+
+Uploads are stored only in a temporary local directory for the request and are removed after analysis. The browser workstation is bound to localhost by default and does not create a cloud upload service or an industrial-control connection.
 
 ## What AquaSentinel does
 
-AquaSentinel accepts one or many evidence files, inspects their structure, identifies useful fields, infers the likely evidence domain, measures data quality, discovers suitable numeric features, applies anomaly analysis only when the data supports it, checks compatible timestamp windows across files, calculates an advisory evidence-risk view, and presents the result in a professional terminal command center.
+AquaSentinel accepts one or many evidence files, inspects their structure, identifies useful fields, infers the likely evidence domain, measures data quality, discovers suitable numeric features, applies anomaly analysis only when the data supports it, checks compatible timestamp windows across files, calculates an advisory evidence-risk view, and presents the result in a professional terminal or browser command center.
 
-The same analyzed evidence package can also be published as Prometheus metrics for a local Grafana dashboard and exported as a Markdown Evidence & Assurance Report containing SHA-256 provenance fingerprints and analysis limitations.
+The same analyzed evidence package can also be published as Prometheus metrics for a local Grafana dashboard and exported as an Evidence & Assurance Report containing SHA-256 provenance fingerprints and analysis limitations.
 
 AquaSentinel follows a simple rule:
 
 **No evidence → no metric → no fabricated finding.**
-
----
 
 ## Evidence-driven analysis path
 
@@ -64,7 +72,7 @@ USER-SUPPLIED WATER / OT EVIDENCE
       +------+------+
       |             |
       v             v
- TERMINAL        PROMETHEUS
+ TERMINAL / WEB   PROMETHEUS
  COMMAND CENTER      |
       |              v
       |           GRAFANA
@@ -79,8 +87,6 @@ USER-SUPPLIED WATER / OT EVIDENCE
 
 This is an analysis architecture, not an industrial control architecture.
 
----
-
 ## Supported evidence formats
 
 | Format | Example evidence |
@@ -90,11 +96,9 @@ This is an analysis architecture, not an industrial control architecture.
 | `.jsonl` | line-delimited event or telemetry evidence |
 | `.xlsx` | spreadsheet exports and assessment evidence |
 
-A directory can also be supplied; AquaSentinel will analyze the supported files it contains.
+A directory can also be supplied from the terminal workflow; the browser workstation accepts multiple file uploads.
 
 There is no required column list. Names such as pH, turbidity, conductivity, chlorine, flow, pressure, energy, membrane health, access events or audit fields are semantic clues when present, not mandatory inputs.
-
----
 
 ## Dynamic evidence domains
 
@@ -111,8 +115,6 @@ AquaSentinel currently infers a primary evidence domain from the supplied schema
 
 Unknown evidence is not forced into a water or cybersecurity category.
 
----
-
 ## AI and anomaly analysis
 
 AquaSentinel automatically discovers suitable numeric features rather than relying on a hard-coded sensor list.
@@ -120,8 +122,6 @@ AquaSentinel automatically discovers suitable numeric features rather than relyi
 For larger usable datasets, it uses a deterministic **Isolation Forest** model. Smaller datasets with enough records use a robust median/MAD method. If there are too few complete numeric observations to support a defensible anomaly finding, AquaSentinel reports the limitation and leaves the anomaly result at zero instead of inventing a result.
 
 The model output is an advisory prioritization signal only. It does not diagnose contamination, confirm an attack, certify water safety or authorize operational action.
-
----
 
 ## Evidence provenance and time correlation
 
@@ -131,8 +131,6 @@ AquaSentinel also searches for timestamp-like fields and validates whether their
 
 An overlapping time window only means the evidence was recorded during the same period. AquaSentinel does not automatically claim causal correlation between events.
 
----
-
 ## Start on Windows
 
 Clone or extract the repository and double-click:
@@ -141,43 +139,15 @@ Clone or extract the repository and double-click:
 AquaSentinel.bat
 ```
 
-The launcher checks Python 3.10+, creates a local `.venv` when needed, installs AquaSentinel and opens the workstation menu:
+The launcher checks Python 3.10+, creates a local `.venv` when needed, installs AquaSentinel and opens the workstation menu, including the terminal workflow, Grafana/Prometheus monitoring, reporting and the local browser evidence workstation.
 
-```text
-[1] LOAD EVIDENCE + TERMINAL COMMAND CENTER
-[2] COMMAND CENTER + LIVE GRAFANA MONITORING
-[3] ANALYZE EVIDENCE + EXPORT ASSURANCE REPORT
-[4] OPEN GRAFANA
-[5] OPEN PROMETHEUS
-[6] OPEN RAW METRICS
-[7] SYSTEM DIAGNOSTICS
-[8] ARCHITECTURE & ASSURANCE
-[Q] QUIT
-```
-
-For evidence options, enter one file or folder at a time. Windows drag-and-drop paths are supported. Press Enter on an empty line when all evidence paths have been added.
-
----
+For terminal evidence options, enter one file or folder at a time. Windows drag-and-drop paths are supported. Press Enter on an empty line when all evidence paths have been added.
 
 ## Terminal Command Center
 
-The command center is generated from the active evidence package. It displays only information supported by the supplied files, including:
-
-- evidence source and record counts;
-- inferred evidence domains and confidence;
-- discovered numeric features;
-- missing-data percentage;
-- analysis method used;
-- advisory anomaly pressure and model flags;
-- inferred timestamp field;
-- shortened SHA-256 fingerprint;
-- evidence priority queue;
-- cross-source overlapping timestamp windows; and
-- explicit safety and human-review boundaries.
+The command center is generated from the active evidence package. It displays only information supported by the supplied files, including evidence source and record counts, inferred evidence domains and confidence, discovered numeric features, missing-data percentage, analysis method used, advisory anomaly pressure and model flags, inferred timestamp field, shortened SHA-256 fingerprint, evidence priority and compatible cross-source timestamp windows.
 
 The interface is designed as a water-security and resilience workstation rather than a simulated game or fake plant-control panel.
-
----
 
 ## Grafana and Prometheus
 
@@ -189,112 +159,4 @@ Prometheus: http://localhost:9091
 Metrics:    http://localhost:9118/metrics
 ```
 
-The metrics exporter publishes the analyzed evidence package. It does not poll industrial devices or retrieve live plant data.
-
-The Grafana dashboard can display evidence-source count, indexed records, advisory risk, model flags, per-source anomaly pressure, data quality and evidence inventory information.
-
----
-
-## Evidence & Assurance Report
-
-AquaSentinel can export a Markdown report for the analyzed evidence package.
-
-The report contains:
-
-- generation time;
-- evidence source inventory;
-- SHA-256 fingerprints;
-- file types, row counts and discovered columns;
-- inferred domains and confidence;
-- numeric features used by the model;
-- missingness and analysis method;
-- anomaly pressure and flags;
-- inferred evidence windows;
-- compatible cross-source time evidence;
-- analysis limitations; and
-- assurance/safety boundary statements.
-
-The Windows launcher generates timestamped reports under `reports/`.
-
-Manual example:
-
-```bash
-python -m aquasentinel --files evidence.csv --command-center --report reports/evidence.md
-```
-
----
-
-## Manual CLI examples
-
-```bash
-# Analyze one file in the terminal command center
-python -m aquasentinel --files evidence.csv --command-center
-
-# Analyze several files
-python -m aquasentinel --files quality.csv ot-events.json energy.xlsx --command-center
-
-# Analyze every supported file in a directory
-python -m aquasentinel --files evidence_folder --command-center
-
-# Export an evidence report
-python -m aquasentinel --files evidence_folder --command-center --report reports/evidence.md
-
-# Publish the analyzed package as Prometheus metrics
-python -m aquasentinel --files evidence_folder --monitor
-
-# CLI self-check
-python -m aquasentinel --self-check
-
-# Conceptual defensive architecture
-python -m aquasentinel --architecture
-
-# Educational assurance context
-python -m aquasentinel --compliance
-```
-
----
-
-## Main implementation
-
-```text
-AquaSentinel.bat                         Windows workstation launcher
-aquasentinel/__main__.py                 Evidence-driven CLI routing
-aquasentinel/evidence.py                 Schema profiling, domain inference, AI analysis,
-                                         provenance and timestamp-window logic
-aquasentinel/terminal_command_center.py  Rich terminal operations view
-aquasentinel/evidence_metrics.py         Prometheus metrics publication
-aquasentinel/evidence_report.py          Evidence & Assurance Report export
-aquasentinel/dashboard.py                Conceptual defensive architecture view
-aquasentinel/compliance.py               Educational assurance context
-monitoring/prometheus.yml                 Local Prometheus configuration
-monitoring/grafana/                       Provisioned Grafana datasource/dashboard
-docker-compose.yml                        Local Grafana + Prometheus stack
-tests/test_evidence.py                    Schema/provenance/correlation tests
-.github/workflows/ci.yml                  Linux and Windows CI
-```
-
-Legacy guided exam-demo launchers and the old pre-scripted demonstration module have been removed from the development branch. Synthetic data may still exist in historical/supporting modules or test fixtures, but the normal AquaSentinel workflow does not automatically load a scenario or pretend that user evidence contains specific sensors.
-
----
-
-## DevSecOps verification
-
-GitHub Actions validates the development workflow on Linux and Windows. Current checks include package installation, Ruff static analysis, Bandit security analysis, pytest, CLI self-check, architecture/assurance commands, a real schema-driven CSV analysis and Evidence & Assurance Report generation.
-
-The release process should not treat CI as complete until all jobs are green. Development changes remain on `develop` until they are verified and intentionally promoted to `main`.
-
----
-
-## Privacy and authorized-use guidance
-
-AquaSentinel performs its analysis locally and does not require a cloud API or external AI service. Use only sanitized evidence or information you are authorized to process.
-
-The workstation is intended for education, demonstrations, defensive analysis and software-development practice. It is not a qualified operational water-quality instrument, a regulatory compliance system, a public-health decision system or an industrial control platform.
-
----
-
-## Safety statement
-
-AquaSentinel analyzes evidence; it does not operate infrastructure.
-
-It does **not** connect to real PLC/SCADA equipment, issue pump/valve commands, alter chemical dosing, perform destructive industrial actions, provide attack tooling or claim that an anomaly proves contamination or compromise. Consequential decisions remain with qualified human operators, engineers, security teams and public-health authorities.
+All monitoring remains local and read-only.
